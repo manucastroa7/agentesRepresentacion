@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { MapPin, Calendar, Ruler, Weight, Activity, Play } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import ShareButtons from '@/components/ShareButtons';
 
 // Reusing the slider component but making it read-only
 const AttributeSlider = ({ label, value, color = "#39FF14" }: { label: string, value: number, color?: string }) => {
@@ -114,8 +116,27 @@ const PublicPlayerProfile = () => {
         return !url.includes('youtube') && !url.includes('youtu.be') && !url.includes('vimeo');
     };
 
+    const playerFullName = `${player.firstName} ${player.lastName}`;
+    const pageTitle = `${playerFullName} - ${player.position} | Agent Sport`;
+    const pageDescription = `Ficha técnica, video y estadísticas de ${playerFullName}.`;
+    const profileUrl = window.location.href;
+
     return (
         <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-[#39FF14] selection:text-slate-950 pb-20 print:bg-white print:text-black print:pb-0">
+            {/* SEO Meta Tags */}
+            <Helmet>
+                <title>{pageTitle}</title>
+                <meta name="description" content={pageDescription} />
+                <meta property="og:title" content={pageTitle} />
+                <meta property="og:description" content={pageDescription} />
+                <meta property="og:image" content={player.avatarUrl || 'https://via.placeholder.com/1200x630'} />
+                <meta property="og:url" content={profileUrl} />
+                <meta property="og:type" content="profile" />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={pageTitle} />
+                <meta name="twitter:description" content={pageDescription} />
+                <meta name="twitter:image" content={player.avatarUrl || 'https://via.placeholder.com/1200x630'} />
+            </Helmet>
             {/* Print Styles */}
             <style>{`
                 @media print {
@@ -296,9 +317,11 @@ const PublicPlayerProfile = () => {
                                 </div>
                             </div>
 
-                            <button className="w-full py-4 bg-white text-slate-950 font-bold rounded-xl hover:bg-slate-200 transition-colors mb-3 no-print">
-                                Contactar Agente
-                            </button>
+                            {/* Share Buttons */}
+                            <div className="mb-4 no-print">
+                                <ShareButtons title={playerFullName} />
+                            </div>
+
                             <button
                                 onClick={handlePrint}
                                 className="w-full py-4 bg-transparent border border-white/20 text-white font-bold rounded-xl hover:bg-white/5 transition-colors no-print"

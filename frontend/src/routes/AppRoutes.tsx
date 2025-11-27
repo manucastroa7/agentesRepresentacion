@@ -11,6 +11,7 @@ import PlayerProfile from '@/modules/players/PlayerProfile';
 import SuperAdminPanel from '@/modules/superadmin/SuperAdminPanel';
 import AgentProfile from '@/modules/public-profile/AgentProfile';
 import PublicPlayerProfile from '@/modules/public-profile/PublicPlayerProfile';
+import AgentPublicPortfolio from '@/modules/public-profile/AgentPublicPortfolio';
 import { Toaster } from "@/components/ui/toaster";
 
 // Placeholder components (will be replaced by real modules)
@@ -29,6 +30,7 @@ const AppRoutes = () => {
                 {/* Public Agent Profile (Dynamic Route) */}
                 <Route path="/agent/:agentId" element={<AgentProfile />} />
                 <Route path="/p/:playerId" element={<PublicPlayerProfile />} />
+                <Route path="/u/:slug" element={<AgentPublicPortfolio />} />
 
                 {/* Protected Routes - Agent */}
                 <Route element={<ProtectedRoute allowedRoles={['agent', 'superadmin']} />}>

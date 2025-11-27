@@ -6,6 +6,8 @@ interface User {
     email: string;
     role: 'superadmin' | 'agent' | 'user';
     name?: string;
+    agencyName?: string;
+    agentSlug?: string;
 }
 
 interface AuthState {
@@ -14,6 +16,7 @@ interface AuthState {
     isAuthenticated: boolean;
     login: (user: User, token: string) => void;
     logout: () => void;
+    updateUser: (userData: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -24,6 +27,9 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             login: (user, token) => set({ user, token, isAuthenticated: true }),
             logout: () => set({ user: null, token: null, isAuthenticated: false }),
+            updateUser: (userData) => set((state) => ({
+                user: state.user ? { ...state.user, ...userData } : null
+            })),
         }),
         {
             name: 'auth-storage',

@@ -1,14 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/context/authStore';
-import { Users, Search, Settings, LogOut, Menu, X, Plus } from 'lucide-react';
+import { Users, Search, Settings, LogOut, Menu, X, Plus, Share2, ExternalLink, Copy } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const Sidebar = () => {
-    const { logout, user } = useAuthStore();
+    const { logout, user, token, updateUser } = useAuthStore();
     const navigate = useNavigate();
     const { toast } = useToast();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    useEffect(() => {
+        // Fetch agent data to get slug and agency name
+        const fetchAgentData = async () => {
+            try {
+                const response = await fetch('http://localhost:3000/agents/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    const agentData = result.data || result;
+                    // Save to authStore for persistence
+                    updateUser({
+                        agentSlug: agentData.slug,
+                        agencyName: agentData.agencyName
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching agent data:', error);
+            }
+        };
+
+        if (token && user?.role === 'agent' && !user?.agentSlug) {
+            fetchAgentData();
+        }
+    }, [token, user, updateUser]);
 
     const handleLogout = () => {
         logout();
@@ -31,6 +59,24 @@ const Sidebar = () => {
             });
         }
         setIsMobileMenuOpen(false);
+    };
+
+    const handleViewPublicPortfolio = () => {
+        if (user?.agentSlug) {
+            window.open(`/u/${user.agentSlug}`, '_blank');
+        }
+    };
+
+    const handleCopyPortfolioLink = () => {
+        if (user?.agentSlug) {
+            const url = `${window.location.origin}/u/${user.agentSlug}`;
+            navigator.clipboard.writeText(url);
+            toast({
+                title: "Enlace copiado",
+                description: "El enlace de tu portafolio ha sido copiado al portapapeles.",
+                variant: "success",
+            });
+        }
     };
 
     return (
@@ -62,15 +108,15 @@ const Sidebar = () => {
                 <div className="px-6 py-6">
                     <button
                         onClick={() => {
-                            navigate('/dashboard/players/new'); // 👈 Esta es la magia que faltaba
-                            setIsMobileMenuOpen(false); // Cerramos el menú si estamos en móvil
+                            navigate('/dashboard/players/new');
+                            setIsMobileMenuOpen(false);
                         }}
                         className="w-full py-3.5 bg-[#39FF14] text-slate-950 font-bold rounded-lg hover:bg-[#32d912] hover:shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all duration-300 flex items-center justify-center gap-2 uppercase tracking-wide text-sm transform active:scale-95"
                     >
                         <Plus size={20} />
                         Nuevo Jugador
                     </button>
-                </div>      
+                </div>
 
                 {/* Navigation */}
                 <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
@@ -96,15 +142,43 @@ const Sidebar = () => {
                     ))}
                 </nav>
 
+                {/* Share Agency Section */}
+                {user?.agentSlug && (
+                    <div className="px-6 py-4 border-t border-white/5">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Share2 size={16} className="text-[#39FF14]" />
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                Compartir Agencia
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <button
+                                onClick={handleViewPublicPortfolio}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                            >
+                                <ExternalLink size={16} />
+                                <span>Ver mi sitio público</span>
+                            </button>
+                            <button
+                                onClick={handleCopyPortfolioLink}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                            >
+                                <Copy size={16} />
+                                <span>Copiar enlace</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* User Profile & Logout */}
                 <div className="p-6 border-t border-white/5 bg-slate-900/50">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-[#39FF14] font-bold border border-white/10 shadow-inner">
-                            {user?.name?.charAt(0) || 'A'}
+                            {user?.agencyName?.charAt(0) || user?.name?.charAt(0) || 'A'}
                         </div>
                         <div className="overflow-hidden">
-                            <p className="text-sm font-bold text-white truncate">{user?.name || 'Agente'}</p>
-                            <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@agentsport.com'}</p>
+                            <p className="text-xs text-slate-400 truncate">Hola,</p>
+                            <p className="text-sm font-bold text-white truncate">{user?.agencyName || user?.name || 'Agente'}</p>
                         </div>
                     </div>
                     <button

@@ -153,12 +153,7 @@ const PlayerListPage = () => {
                                 <button
                                     onClick={() => {
                                         const url = `${window.location.origin}/p/${player.id}`;
-                                        navigator.clipboard.writeText(url);
-                                        toast({
-                                            title: "Enlace copiado",
-                                            description: "El enlace público ha sido copiado al portapapeles.",
-                                            variant: "success",
-                                        });
+                                        window.open(url, '_blank');
                                     }}
                                     className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-[#39FF14]/10 hover:bg-[#39FF14] text-[#39FF14] hover:text-slate-950 rounded-lg transition-all duration-300 text-sm font-bold group/btn"
                                 >
@@ -270,18 +265,13 @@ const PlayerListPage = () => {
                                     <button
                                         onClick={() => {
                                             const url = `${window.location.origin}/p/${player.id}`;
-                                            navigator.clipboard.writeText(url);
-                                            toast({
-                                                title: "Enlace copiado",
-                                                description: "El enlace público ha sido copiado al portapapeles.",
-                                                variant: "success",
-                                            });
+                                            window.open(url, '_blank');
                                         }}
                                         className="flex items-center gap-2 py-2 px-3 bg-[#39FF14]/10 hover:bg-[#39FF14] text-[#39FF14] hover:text-slate-950 rounded-lg transition-all duration-300 text-sm font-bold"
-                                        title="Copiar link público"
+                                        title="Abrir perfil público"
                                     >
                                         <LinkIcon size={16} />
-                                        <span className="hidden lg:inline">Link</span>
+                                        <span className="hidden lg:inline">Ver</span>
                                     </button>
                                     <button
                                         onClick={() => window.location.href = `/dashboard/players/edit/${player.id}`}
