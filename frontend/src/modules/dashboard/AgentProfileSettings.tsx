@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Lock, Upload, Phone, Globe, MapPin, Instagram, Linkedin, Twitter, Shield, Sparkles, Link as LinkIcon } from 'lucide-react';
 import { useAuthStore } from '@/context/authStore';

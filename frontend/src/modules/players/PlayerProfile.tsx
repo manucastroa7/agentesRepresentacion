@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronLeft, MapPin, Calendar,
-    TrendingUp, Play, ArrowRightLeft, Shield, Trophy
+    TrendingUp, ArrowRightLeft, Shield, Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/context/authStore';

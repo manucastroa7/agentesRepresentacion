@@ -142,15 +142,6 @@ const CreatePlayerForm = () => {
     const [uploadingImage, setUploadingImage] = useState(false);
     const [uploadingVideo, setUploadingVideo] = useState(false);
     const [videoSource, setVideoSource] = useState<'upload' | 'link'>('upload');
-    const [gallery, setGallery] = useState<any[]>([]);
-    const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
-    const [mediaForm, setMediaForm] = useState<{ type: 'image' | 'video'; title: string; url: string; file: File | null }>({
-        type: 'image',
-        title: '',
-        url: '',
-        file: null,
-    });
-
     // Cloudinary Config
     const CLOUD_NAME = 'drghwlpwe'; // ⚠️ REPLACE WITH YOUR CLOUD NAME
     const UPLOAD_PRESET = 'agentsport_unsigned'; // ⚠️ REPLACE WITH YOUR PRESET

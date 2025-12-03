@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import {
-    Trophy, CheckCircle, TrendingUp, Users, ArrowRight, Play,
-    Layout, Share2, Zap, ChevronRight, Star, Instagram, Twitter, Linkedin
+    Trophy, CheckCircle, ArrowRight, Play,
+    Layout, Share2, Zap, ChevronRight, Instagram, Twitter, Linkedin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/context/authStore';
@@ -26,7 +26,7 @@ const staggerContainer: Variants = {
 import PricingSection from './components/PricingSection';
 
 const LandingPage = () => {
-    const { isAuthenticated, user } = useAuthStore();
+    const { isAuthenticated } = useAuthStore();
 
     return (
         <div className="min-h-screen bg-tactical-grid font-sans text-white overflow-x-hidden selection:bg-[#39FF14] selection:text-black">
