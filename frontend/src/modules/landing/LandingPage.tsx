@@ -6,6 +6,7 @@ import {
     Layout, Share2, Zap, ChevronRight, Star, Instagram, Twitter, Linkedin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/context/authStore';
 
 const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -25,6 +26,8 @@ const staggerContainer: Variants = {
 import PricingSection from './components/PricingSection';
 
 const LandingPage = () => {
+    const { isAuthenticated, user } = useAuthStore();
+
     return (
         <div className="min-h-screen bg-tactical-grid font-sans text-white overflow-x-hidden selection:bg-[#39FF14] selection:text-black">
             {/* Navbar */}
@@ -45,16 +48,26 @@ const LandingPage = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Link to="/login">
-                            <Button variant="ghost" className="rounded-full text-slate-300 hover:text-white hover:bg-white/10 font-bold">
-                                LOGIN
-                            </Button>
-                        </Link>
-                        <Link to="/login">
-                            <Button className="rounded-full bg-[#39FF14] hover:bg-[#32d612] text-black shadow-[0_0_20px_rgba(57,255,20,0.4)] px-8 font-bold uppercase tracking-wide transition-all hover:scale-105">
-                                Solicitar Demo
-                            </Button>
-                        </Link>
+                        {isAuthenticated ? (
+                            <Link to="/dashboard">
+                                <Button className="rounded-full bg-[#39FF14] hover:bg-[#32d612] text-black shadow-[0_0_20px_rgba(57,255,20,0.4)] px-8 font-bold uppercase tracking-wide transition-all hover:scale-105">
+                                    Ir al Dashboard
+                                </Button>
+                            </Link>
+                        ) : (
+                            <>
+                                <Link to="/login">
+                                    <Button variant="ghost" className="rounded-full text-slate-300 hover:text-white hover:bg-white/10 font-bold">
+                                        LOGIN
+                                    </Button>
+                                </Link>
+                                <Link to="/login">
+                                    <Button className="rounded-full bg-[#39FF14] hover:bg-[#32d612] text-black shadow-[0_0_20px_rgba(57,255,20,0.4)] px-8 font-bold uppercase tracking-wide transition-all hover:scale-105">
+                                        Solicitar Demo
+                                    </Button>
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </nav>
@@ -96,14 +109,24 @@ const LandingPage = () => {
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                                <Link to="/login">
-                                    <Button size="lg" className="rounded-full w-full sm:w-auto text-lg h-14 px-10 bg-[#39FF14] hover:bg-[#32d612] text-black shadow-[0_0_30px_rgba(57,255,20,0.3)] transition-transform hover:scale-105 font-black uppercase italic">
-                                        Empezar Ahora <ArrowRight className="ml-2 h-6 w-6" />
-                                    </Button>
-                                </Link>
-                                <Button variant="outline" size="lg" className="rounded-full w-full sm:w-auto text-lg h-14 px-10 border-white/20 text-white hover:bg-white/10 backdrop-blur-sm font-bold uppercase tracking-wide">
-                                    <Play className="mr-2 h-5 w-5 fill-current" /> Ver Demo
-                                </Button>
+                                {isAuthenticated ? (
+                                    <Link to="/dashboard">
+                                        <Button size="lg" className="rounded-full w-full sm:w-auto text-lg h-14 px-10 bg-[#39FF14] hover:bg-[#32d612] text-black shadow-[0_0_30px_rgba(57,255,20,0.3)] transition-transform hover:scale-105 font-black uppercase italic">
+                                            Ir al Dashboard <ArrowRight className="ml-2 h-6 w-6" />
+                                        </Button>
+                                    </Link>
+                                ) : (
+                                    <>
+                                        <Link to="/login">
+                                            <Button size="lg" className="rounded-full w-full sm:w-auto text-lg h-14 px-10 bg-[#39FF14] hover:bg-[#32d612] text-black shadow-[0_0_30px_rgba(57,255,20,0.3)] transition-transform hover:scale-105 font-black uppercase italic">
+                                                Empezar Ahora <ArrowRight className="ml-2 h-6 w-6" />
+                                            </Button>
+                                        </Link>
+                                        <Button variant="outline" size="lg" className="rounded-full w-full sm:w-auto text-lg h-14 px-10 border-white/20 text-white hover:bg-white/10 backdrop-blur-sm font-bold uppercase tracking-wide">
+                                            <Play className="mr-2 h-5 w-5 fill-current" /> Ver Demo
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         </motion.div>
 

@@ -18,58 +18,6 @@ interface Prospect {
     status: ProspectStatus;
     image: string;
 }
-const MOCK_PROSPECTS: Prospect[] = [
-    {
-        id: '1',
-        name: 'Gianluca Prestianni',
-        age: 17,
-        club: 'Vélez Sarsfield',
-        position: 'Extremo',
-        rating: 5,
-        status: 'observing',
-        image: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?q=80&w=200&auto=format&fit=crop'
-    },
-    {
-        id: '2',
-        name: 'Federico Redondo',
-        age: 20,
-        club: 'Argentinos Jrs',
-        position: 'Mediocentro',
-        rating: 4.5,
-        status: 'observing',
-        image: 'https://images.unsplash.com/photo-1522770179533-24471fcdba45?q=80&w=200&auto=format&fit=crop'
-    },
-    {
-        id: '3',
-        name: 'Agustín Ruberto',
-        age: 17,
-        club: 'River Plate',
-        position: 'Delantero',
-        rating: 4,
-        status: 'contacted',
-        image: 'https://images.unsplash.com/photo-1511886929837-354d827aae26?q=80&w=200&auto=format&fit=crop'
-    },
-    {
-        id: '4',
-        name: 'Franco Mastantuono',
-        age: 16,
-        club: 'River Plate',
-        position: 'Mediapunta',
-        rating: 5,
-        status: 'priority',
-        image: 'https://images.unsplash.com/photo-1560272564-c83b66b1ad12?q=80&w=200&auto=format&fit=crop'
-    },
-    {
-        id: '5',
-        name: 'Ian Subiabre',
-        age: 17,
-        club: 'River Plate',
-        position: 'Extremo',
-        rating: 4,
-        status: 'contacted',
-        image: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=200&auto=format&fit=crop'
-    }
-];
 
 // --- Components ---
 
@@ -137,7 +85,7 @@ const KanbanColumn = ({
             {/* Column Header */}
             <div className="p-4 border-b border-white/5 flex items-center justify-between sticky top-0 bg-slate-900/90 backdrop-blur-md z-10">
                 <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg bg-${color}-500/10 text-${color}-500`} style={{ color: color, backgroundColor: `${color}1A` }}>
+                    <div className="p-2 rounded-lg border border-white/10" style={{ color, backgroundColor: `${color}15` }}>
                         <Icon size={18} />
                     </div>
                     <div>
@@ -156,11 +104,12 @@ const KanbanColumn = ({
                     <ScoutingCard key={prospect.id} prospect={prospect} />
                 ))}
 
-                {/* Add Button Placeholder */}
-                <button className="w-full py-3 border border-dashed border-white/10 rounded-xl text-slate-500 text-sm font-medium hover:border-white/30 hover:text-white transition-all flex items-center justify-center gap-2 group">
-                    <Plus size={16} className="group-hover:scale-110 transition-transform" />
-                    Añadir a {title}
-                </button>
+                {/* Empty state */}
+                {prospects.length === 0 && (
+                    <div className="w-full py-3 border border-dashed border-white/10 rounded-xl text-slate-500 text-sm font-medium text-center">
+                        Sin jugadores aún
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -168,8 +117,19 @@ const KanbanColumn = ({
 
 const ScoutingPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [prospects, setProspects] = useState<Prospect[]>([]);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [form, setForm] = useState({
+        name: '',
+        age: '',
+        club: '',
+        position: '',
+        status: 'observing' as ProspectStatus,
+        rating: 3,
+        image: ''
+    });
 
-    const filteredProspects = MOCK_PROSPECTS.filter(p =>
+    const filteredProspects = prospects.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.club.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -177,6 +137,35 @@ const ScoutingPage = () => {
     const observing = filteredProspects.filter(p => p.status === 'observing');
     const contacted = filteredProspects.filter(p => p.status === 'contacted');
     const priority = filteredProspects.filter(p => p.status === 'priority');
+
+    const handleFormChange = (key: string, value: string) => {
+        setForm(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleCreate = () => {
+        if (!form.name || !form.club || !form.position) return;
+        const newProspect: Prospect = {
+            id: crypto.randomUUID(),
+            name: form.name,
+            age: Number(form.age) || 0,
+            club: form.club,
+            position: form.position,
+            status: form.status,
+            rating: Number(form.rating) || 3,
+            image: form.image || 'https://via.placeholder.com/150'
+        };
+        setProspects(prev => [newProspect, ...prev]);
+        setForm({
+            name: '',
+            age: '',
+            club: '',
+            position: '',
+            status: 'observing',
+            rating: 3,
+            image: ''
+        });
+        setIsFormOpen(false);
+    };
 
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col space-y-6">
@@ -198,9 +187,12 @@ const ScoutingPage = () => {
                             className="w-full bg-slate-900/50 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#39FF14]/50 transition-all"
                         />
                     </div>
-                    <button className="px-4 py-2.5 bg-[#39FF14] hover:bg-[#32d912] text-slate-950 rounded-xl font-bold text-sm tracking-wide shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:shadow-[0_0_30px_rgba(57,255,20,0.5)] transition-all flex items-center gap-2 whitespace-nowrap">
+                    <button
+                        onClick={() => setIsFormOpen(true)}
+                        className="px-4 py-2.5 bg-[#39FF14] hover:bg-[#32d912] text-slate-950 rounded-xl font-bold text-sm tracking-wide shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:shadow-[0_0_30px_rgba(57,255,20,0.5)] transition-all flex items-center gap-2 whitespace-nowrap"
+                    >
                         <Plus size={18} />
-                        <span className="hidden sm:inline">NUEVO PROSPECTO</span>
+                        <span className="hidden sm:inline">NUEVO JUGADOR</span>
                     </button>
                 </div>
             </div>
@@ -229,6 +221,114 @@ const ScoutingPage = () => {
                     count={priority.length}
                 />
             </div>
+
+            {/* Modal Nuevo Jugador */}
+            {isFormOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-xl bg-slate-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Scouting</p>
+                                <h3 className="text-xl text-white font-display font-bold">Nuevo jugador</h3>
+                            </div>
+                            <button
+                                onClick={() => setIsFormOpen(false)}
+                                className="text-slate-500 hover:text-white transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-xs text-slate-400">Nombre</label>
+                                <input
+                                    value={form.name}
+                                    onChange={(e) => handleFormChange('name', e.target.value)}
+                                    className="w-full mt-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#39FF14]/50 focus:outline-none"
+                                    placeholder="Juan Pérez"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400">Edad</label>
+                                <input
+                                    value={form.age}
+                                    onChange={(e) => handleFormChange('age', e.target.value)}
+                                    className="w-full mt-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#39FF14]/50 focus:outline-none"
+                                    placeholder="18"
+                                    type="number"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400">Club</label>
+                                <input
+                                    value={form.club}
+                                    onChange={(e) => handleFormChange('club', e.target.value)}
+                                    className="w-full mt-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#39FF14]/50 focus:outline-none"
+                                    placeholder="Club actual"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400">Posición</label>
+                                <input
+                                    value={form.position}
+                                    onChange={(e) => handleFormChange('position', e.target.value)}
+                                    className="w-full mt-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#39FF14]/50 focus:outline-none"
+                                    placeholder="Extremo"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400">Estado</label>
+                                <select
+                                    value={form.status}
+                                    onChange={(e) => handleFormChange('status', e.target.value)}
+                                    className="w-full mt-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#39FF14]/50 focus:outline-none"
+                                >
+                                    <option value="observing">Observando</option>
+                                    <option value="contacted">Contactado</option>
+                                    <option value="priority">Prioridad</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs text-slate-400">Rating (1-5)</label>
+                                <input
+                                    value={form.rating}
+                                    onChange={(e) => handleFormChange('rating', e.target.value)}
+                                    className="w-full mt-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#39FF14]/50 focus:outline-none"
+                                    type="number"
+                                    min="1"
+                                    max="5"
+                                    step="0.5"
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="text-xs text-slate-400">Foto (URL)</label>
+                                <input
+                                    value={form.image}
+                                    onChange={(e) => handleFormChange('image', e.target.value)}
+                                    className="w-full mt-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-[#39FF14]/50 focus:outline-none"
+                                    placeholder="https://..."
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={() => setIsFormOpen(false)}
+                                className="px-4 py-2 text-slate-300 hover:text-white border border-white/10 rounded-lg"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleCreate}
+                                className="px-5 py-2 bg-[#39FF14] text-slate-950 font-bold rounded-lg hover:bg-[#32d912] transition-colors"
+                            >
+                                Guardar jugador
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

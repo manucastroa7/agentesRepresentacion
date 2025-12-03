@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Shield, Globe, Plus, LogOut, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, Shield, Globe, Plus, LogOut, Search, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ const SuperAdminPanel = () => {
     const navigate = useNavigate();
     const [agents, setAgents] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; agentId: string | null; agentName: string }>({ show: false, agentId: null, agentName: '' });
     const { register, handleSubmit, reset } = useForm();
     const [isLoading, setIsLoading] = useState(true);
     const { token, logout } = useAuthStore();
@@ -58,6 +59,22 @@ const SuperAdminPanel = () => {
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    const handleDelete = async (agentId: string) => {
+        try {
+            const response = await fetch(`http://localhost:3000/superadmin/agents/${agentId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                setDeleteConfirm({ show: false, agentId: null, agentName: '' });
+                fetchAgents();
+            }
+        } catch (error) {
+            console.error("Error deleting agent", error);
+        }
     };
 
     return (
@@ -179,7 +196,13 @@ const SuperAdminPanel = () => {
                                             </span>
                                         </td>
                                         <td className="px-8 py-4">
-                                            <button className="text-slate-400 hover:text-white text-sm font-medium">Editar</button>
+                                            <button
+                                                onClick={() => setDeleteConfirm({ show: true, agentId: agent.id, agentName: agent.agencyName })}
+                                                className="text-red-400 hover:text-red-300 text-sm font-medium flex items-center gap-1.5 transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                                Eliminar
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -237,6 +260,46 @@ const SuperAdminPanel = () => {
                                 </button>
                             </div>
                         </form>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirm.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-slate-900 border border-red-500/20 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+                    >
+                        <div className="p-6 border-b border-white/10">
+                            <div className="flex items-center gap-3 text-red-400">
+                                <Trash2 size={24} />
+                                <h3 className="text-xl font-bold text-white">Eliminar Agencia</h3>
+                            </div>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <p className="text-slate-300">
+                                ¿Estás seguro de que deseas eliminar la agencia <strong className="text-white">{deleteConfirm.agentName}</strong>?
+                            </p>
+                            <p className="text-sm text-slate-400">
+                                Esta acción eliminará el agente y su usuario asociado. No se puede deshacer.
+                            </p>
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setDeleteConfirm({ show: false, agentId: null, agentName: '' })}
+                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-xl transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={() => deleteConfirm.agentId && handleDelete(deleteConfirm.agentId)}
+                                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all"
+                                >
+                                    Eliminar
+                                </button>
+                            </div>
+                        </div>
                     </motion.div>
                 </div>
             )}
