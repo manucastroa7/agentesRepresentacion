@@ -57,4 +57,7 @@ export class CreatePlayerDto {
     @IsEnum(PlayerStatus)
     @IsOptional()
     status?: PlayerStatus;
+
+    @IsOptional()
+    privateDetails?: any; // Private CRM data (flexible JSONB object)
 }

@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Agent } from '../../agents/entities/agent.entity';
 import { PlayerVideo } from './player-video.entity';
+import { PlayerMedia } from './player-media.entity';
 
 
 export enum PlayerStatus {
@@ -42,11 +43,8 @@ export class Player {
     @Column({ nullable: true })
     avatarUrl: string;
 
-    @Column({ type: 'jsonb', default: [] })
-    media: any[]; // Array of { type: 'image' | 'video', url: string, publicId: string }
-
     @Column({ nullable: true })
-    videoUrl: string;
+    videoUrl: string; // Deprecated, retained for compatibility
 
     @Column({ type: 'jsonb', default: [] })
     additionalInfo: Array<{ label: string, value: string }>;
@@ -74,6 +72,12 @@ export class Player {
     })
     status: PlayerStatus;
 
-    @OneToMany(() => PlayerVideo, (video) => video.player)
+    @Column({ type: 'jsonb', default: {} })
+    privateDetails: any; // Private CRM data: contracts, health, family, observations
+
+    @OneToMany(() => PlayerVideo, (video) => video.player, { cascade: true, onDelete: 'CASCADE' })
     videos: PlayerVideo[];
+
+    @OneToMany(() => PlayerMedia, (media) => media.player, { cascade: true })
+    media: PlayerMedia[];
 }

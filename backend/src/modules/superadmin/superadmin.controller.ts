@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { SuperadminService } from './superadmin.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -28,5 +28,11 @@ export class SuperadminController {
         return {
             message: 'Stats placeholder',
         };
+    }
+
+    @Delete('agents/:id')
+    async deleteAgent(@Param('id') id: string) {
+        await this.agentsService.delete(id);
+        return { message: 'Agent deleted successfully' };
     }
 }

@@ -9,4 +9,9 @@ export class PublicPlayersController {
     findOne(@Param('id') id: string) {
         return this.playersService.findOnePublic(id);
     }
+
+    @Get('debug/fix-agency')
+    async fixAgency() {
+        return this.playersService.fixAgencyData();
+    }
 }

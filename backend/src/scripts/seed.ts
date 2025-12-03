@@ -1,0 +1,62 @@
+import { DataSource } from 'typeorm';
+import { User, UserRole } from '../modules/users/entities/user.entity';
+import * as bcrypt from 'bcrypt';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const AppDataSource = new DataSource({
+    type: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    username: process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'agentes_db',
+    synchronize: false,
+    logging: true,
+    entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+});
+
+async function seed() {
+    try {
+        await AppDataSource.initialize();
+        console.log('✅ Database connection established');
+
+        const userRepository = AppDataSource.getRepository(User);
+
+        // Check if superadmin exists
+        const superAdminEmail = 'agentesrepresentacion@gmail.com';
+        let superAdmin = await userRepository.findOne({
+            where: { email: superAdminEmail },
+        });
+
+        if (superAdmin) {
+            console.log('✅ Superadmin user already exists');
+
+            // Update role if not superadmin
+            if (superAdmin.role !== UserRole.SUPERADMIN) {
+                superAdmin.role = UserRole.SUPERADMIN;
+                await userRepository.save(superAdmin);
+                console.log('✅ Updated user role to SUPERADMIN');
+            }
+        } else {
+            // Create superadmin user
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            superAdmin = userRepository.create({
+                email: superAdminEmail,
+                passwordHash: hashedPassword,
+                role: UserRole.SUPERADMIN,
+            });
+            await userRepository.save(superAdmin);
+            console.log('✅ Superadmin user created');
+        }
+
+        console.log('🎉 Seed completed successfully!');
+        await AppDataSource.destroy();
+    } catch (error) {
+        console.error('❌ Error seeding database:', error);
+        process.exit(1);
+    }
+}
+
+seed();

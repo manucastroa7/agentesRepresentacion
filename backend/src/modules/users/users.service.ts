@@ -21,4 +21,8 @@ export class UsersService {
     async update(id: string, data: Partial<User>): Promise<User | null> {
         return this.usersRepository.update(id, data);
     }
+
+    async delete(id: string): Promise<void> {
+        await this.usersRepository.delete(id);
+    }
 }

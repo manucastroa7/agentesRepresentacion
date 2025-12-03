@@ -3,7 +3,7 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import * as Tabs from '@radix-ui/react-tabs';
-import { User, Activity, ImageIcon, Save, ChevronDown, Plus, Trash2, Upload, Link as LinkIcon } from 'lucide-react';
+import { User, Activity, ImageIcon, Save, ChevronDown, Plus, Trash2, Upload, Link as LinkIcon, Lock } from 'lucide-react';
 import { useAuthStore } from '@/context/authStore';
 import InputGroup from './components/InputGroup';
 import AttributeSlider from './components/AttributeSlider';
@@ -29,6 +29,22 @@ interface FormData {
         passing: number;
     };
     additionalInfo: Array<{ label: string; value: string }>;
+    privateDetails: {
+        contract: {
+            expiryDate: string;
+            releaseClause: string;
+            annualSalary: string;
+            coRepresented: string;
+        };
+        health: {
+            injuryHistory: string;
+            nutrition: string;
+        };
+        family: {
+            familyNotes: string;
+        };
+        observations: string;
+    };
 }
 
 const CreatePlayerForm = () => {
@@ -48,7 +64,7 @@ const CreatePlayerForm = () => {
             birthDate: '',
             avatarUrl: '',
             videoUrl: '',
-            status: 'watchlist',
+            status: 'signed',
             stats: {
                 speed: 50,
                 physical: 50,
@@ -57,7 +73,13 @@ const CreatePlayerForm = () => {
                 shooting: 50,
                 passing: 50
             },
-            additionalInfo: []
+            additionalInfo: [],
+            privateDetails: {
+                contract: { expiryDate: '', releaseClause: '', annualSalary: '', coRepresented: '' },
+                health: { injuryHistory: '', nutrition: '' },
+                family: { familyNotes: '' },
+                observations: ''
+            }
         }
     });
 
@@ -119,6 +141,14 @@ const CreatePlayerForm = () => {
     const [uploadingImage, setUploadingImage] = useState(false);
     const [uploadingVideo, setUploadingVideo] = useState(false);
     const [videoSource, setVideoSource] = useState<'upload' | 'link'>('upload');
+    const [gallery, setGallery] = useState<any[]>([]);
+    const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+    const [mediaForm, setMediaForm] = useState<{ type: 'image' | 'video'; title: string; url: string; file: File | null }>({
+        type: 'image',
+        title: '',
+        url: '',
+        file: null,
+    });
 
     // Cloudinary Config
     const CLOUD_NAME = 'drghwlpwe'; // ⚠️ REPLACE WITH YOUR CLOUD NAME
@@ -192,7 +222,8 @@ const CreatePlayerForm = () => {
             stats: data.stats,
             status: data.status,
             videoUrl: data.videoUrl,
-            additionalInfo: data.additionalInfo
+            additionalInfo: data.additionalInfo,
+            privateDetails: data.privateDetails
         };
 
         if (!token) {
@@ -287,6 +318,7 @@ const CreatePlayerForm = () => {
                             { id: 'personal', label: 'Datos Personales', icon: User },
                             { id: 'technical', label: 'Perfil Técnico', icon: Activity },
                             { id: 'multimedia', label: 'Multimedia', icon: ImageIcon },
+                            { id: 'private', label: 'Gestión Privada 🔒', icon: Lock },
                         ].map((tab) => (
                             <Tabs.Trigger
                                 key={tab.id}
@@ -294,11 +326,13 @@ const CreatePlayerForm = () => {
                                 className={`
                                         group flex items-center gap-2 px-6 py-4 text-sm font-bold uppercase tracking-wider border-b-2 transition-all
                                         ${activeTab === tab.id
-                                        ? 'border-[#39FF14] text-[#39FF14]'
+                                        ? tab.id === 'private'
+                                            ? 'border-orange-500 text-orange-500'
+                                            : 'border-[#39FF14] text-[#39FF14]'
                                         : 'border-transparent text-slate-500 hover:text-slate-300 hover:border-white/10'}
                                     `}
                             >
-                                <tab.icon size={18} className={activeTab === tab.id ? 'text-[#39FF14]' : 'text-slate-500 group-hover:text-slate-300'} />
+                                <tab.icon size={18} className={activeTab === tab.id ? (tab.id === 'private' ? 'text-orange-500' : 'text-[#39FF14]') : 'text-slate-500 group-hover:text-slate-300'} />
                                 {tab.label}
                             </Tabs.Trigger>
                         ))}
@@ -683,6 +717,133 @@ const CreatePlayerForm = () => {
                                             </div>
                                         </InputGroup>
                                     )}
+                                </div>
+                            </motion.div>
+                        </Tabs.Content>
+
+                        {/* --- TAB 4: PRIVATE CRM --- */}
+                        <Tabs.Content value="private" className="outline-none focus:outline-none">
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="space-y-8"
+                            >
+                                {/* Alert Banner */}
+                                <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 flex gap-3 items-start">
+                                    <Lock className="text-orange-400 mt-0.5" size={20} />
+                                    <div>
+                                        <h5 className="text-orange-400 font-bold text-sm mb-1">Información Confidencial</h5>
+                                        <p className="text-slate-400 text-xs leading-relaxed">
+                                            Los datos de esta sección son <strong>privados</strong> y <strong>nunca</strong> se mostrarán en el perfil público del jugador.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Contract Section */}
+                                <div className="bg-red-950/5 border border-red-500/20 rounded-2xl p-6">
+                                    <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                        Contratos
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <InputGroup label="Vencimiento de Contrato">
+                                            <input
+                                                type="date"
+                                                {...register('privateDetails.contract.expiryDate')}
+                                                className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all [color-scheme:dark]"
+                                            />
+                                        </InputGroup>
+                                        <InputGroup label="Cláusula de Salida (USD)">
+                                            <div className="relative">
+                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                    <span className="text-slate-500 font-bold">$</span>
+                                                </div>
+                                                <input
+                                                    type="number"
+                                                    {...register('privateDetails.contract.releaseClause')}
+                                                    className="w-full bg-slate-950 border border-red-500/20 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all"
+                                                    placeholder="5000000"
+                                                />
+                                            </div>
+                                        </InputGroup>
+                                        <InputGroup label="Salario Anual (USD)">
+                                            <div className="relative">
+                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                    <span className="text-slate-500 font-bold">$</span>
+                                                </div>
+                                                <input
+                                                    type="number"
+                                                    {...register('privateDetails.contract.annualSalary')}
+                                                    className="w-full bg-slate-950 border border-red-500/20 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all"
+                                                    placeholder="500000"
+                                                />
+                                            </div>
+                                        </InputGroup>
+                                        <InputGroup label="Empresa Co-Representante">
+                                            <input
+                                                type="text"
+                                                {...register('privateDetails.contract.coRepresented')}
+                                                className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all"
+                                                placeholder="Ej: XYZ Management"
+                                            />
+                                        </InputGroup>
+                                    </div>
+                                </div>
+
+                                {/* Health Section */}
+                                <div className="bg-red-950/5 border border-red-500/20 rounded-2xl p-6">
+                                    <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                        Salud & Físico
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <InputGroup label="Historial de Lesiones">
+                                            <textarea
+                                                {...register('privateDetails.health.injuryHistory')}
+                                                rows={4}
+                                                className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
+                                                placeholder="Ej: Lesión de menisco en 2022, recuperación total..."
+                                            />
+                                        </InputGroup>
+                                        <InputGroup label="Nutrición / Dietas">
+                                            <textarea
+                                                {...register('privateDetails.health.nutrition')}
+                                                rows={4}
+                                                className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
+                                                placeholder="Ej: Dieta alta en proteínas, intolerancia a..."
+                                            />
+                                        </InputGroup>
+                                    </div>
+                                </div>
+
+                                {/* Family & Environment Section */}
+                                <div className="bg-red-950/5 border border-red-500/20 rounded-2xl p-6">
+                                    <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                        Entorno & Familia
+                                    </h3>
+                                    <InputGroup label="Situación Familiar / Entorno">
+                                        <textarea
+                                            {...register('privateDetails.family.familyNotes')}
+                                            rows={4}
+                                            className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
+                                            placeholder="Ej: Padres presentes, hermano menor juega fútbol, tiene pasaporte italiano..."
+                                        />
+                                    </InputGroup>
+                                </div>
+
+                                {/* General Observations Section */}
+                                <div className="bg-red-950/5 border border-red-500/20 rounded-2xl p-6">
+                                    <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                        Observaciones Generales
+                                    </h3>
+                                    <textarea
+                                        {...register('privateDetails.observations')}
+                                        rows={6}
+                                        className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
+                                        placeholder="Notas adicionales, recordatorios, aspectos importantes a considerar..."
+                                    />
                                 </div>
                             </motion.div>
                         </Tabs.Content>

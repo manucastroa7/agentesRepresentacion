@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Player } from './entities/player.entity';
+import { Player, PlayerStatus } from './entities/player.entity';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { Agent } from '../agents/entities/agent.entity';
+import { PlayerMedia } from './entities/player-media.entity';
 
 @Injectable()
 export class PlayersService {
@@ -12,13 +13,15 @@ export class PlayersService {
         private readonly playerRepository: Repository<Player>,
         @InjectRepository(Agent)
         private readonly agentRepository: Repository<Agent>,
+        @InjectRepository(PlayerMedia)
+        private readonly playerMediaRepository: Repository<PlayerMedia>,
     ) { }
 
     // Helper privado para obtener el agente del usuario actual
     private async getAgentByUserId(userId: string): Promise<Agent> {
         const agent = await this.agentRepository.findOne({ where: { userId } });
         if (!agent) {
-            console.error(`❌ Access denied: No agent profile found for userId ${userId}`);
+            console.error(`🚫 Access denied: No agent profile found for userId ${userId}`);
             throw new ForbiddenException('No tienes permiso para realizar esta acción (Perfil de Agente no encontrado).');
         }
 
@@ -28,20 +31,38 @@ export class PlayersService {
 
     async create(createPlayerDto: CreatePlayerDto, userId: string): Promise<Player> {
         const agent = await this.getAgentByUserId(userId);
+        const status = createPlayerDto.status ?? PlayerStatus.SIGNED;
+
+        console.log('🆕 Creating new player:');
+        console.log('   - DTO status:', createPlayerDto.status);
+        console.log('   - Final status:', status);
+        console.log('   - Agent ID:', agent.id);
+
+        // Exclude media from DTO as it's handled separately via addMedia method
+        const { media, ...playerData } = createPlayerDto;
 
         const player = this.playerRepository.create({
-            ...createPlayerDto,
-            agent: agent, // 👈 Asignación crítica del dueño
+            ...playerData,
+            status,
+            agent,
         });
 
-        return this.playerRepository.save(player);
+        const savedPlayer = await this.playerRepository.save(player);
+
+        console.log('✅ Player saved successfully:');
+        console.log('   - Player ID:', savedPlayer.id);
+        console.log('   - Status in DB:', savedPlayer.status);
+        console.log('   - Agent ID:', savedPlayer.agentId);
+
+        return savedPlayer;
     }
 
     async findAll(userId: string): Promise<Player[]> {
         const agent = await this.getAgentByUserId(userId);
 
         return this.playerRepository.find({
-            where: { agent: { id: agent.id } }, // 👈 Filtro estricto por agente
+            where: { agent: { id: agent.id } },
+            relations: ['media'],
             order: { createdAt: 'DESC' }
         });
     }
@@ -49,21 +70,20 @@ export class PlayersService {
     async findOne(id: string, userId: string): Promise<Player> {
         const agent = await this.getAgentByUserId(userId);
 
-        console.log(`🔍 findOne requesting Player ID: ${id} for Agent ID: ${agent.id}`);
+        console.log(`🔎 findOne requesting Player ID: ${id} for Agent ID: ${agent.id}`);
 
         const player = await this.playerRepository.findOne({
-            where: { id, agent: { id: agent.id } }, // 👈 Verificación de propiedad
-            relations: ['videos']
+            where: { id, agent: { id: agent.id } },
+            relations: ['videos', 'media']
         });
 
         if (!player) {
             console.error(`❌ Player not found in DB for ID: ${id} and Agent: ${agent.id}`);
-            // Check if player exists at all (ignoring agent) for debugging
             const playerExists = await this.playerRepository.findOne({ where: { id } });
             if (playerExists) {
                 console.error(`⚠️ Player exists but belongs to Agent: ${playerExists.agent?.id} (Current Agent: ${agent.id})`);
             } else {
-                console.error(`💀 Player does not exist at all in DB.`);
+                console.error(`🔍 Player does not exist at all in DB.`);
             }
 
             throw new NotFoundException('Jugador no encontrado o no tienes permiso para verlo.');
@@ -73,29 +93,102 @@ export class PlayersService {
     }
 
     async update(id: string, updatePlayerDto: any, userId: string): Promise<Player> {
-        const agent = await this.getAgentByUserId(userId);
+        await this.getAgentByUserId(userId);
 
-        // 1. Verificar que el jugador exista y pertenezca al agente
         const player = await this.findOne(id, userId);
 
-        // 2. Actualizar
         Object.assign(player, updatePlayerDto);
         return this.playerRepository.save(player);
     }
 
-    async remove(id: string, userId: string): Promise<void> {
+    async addMedia(userId: string, playerId: string, data: { type: 'image' | 'video'; url: string; title?: string }) {
         const agent = await this.getAgentByUserId(userId);
+        const player = await this.playerRepository.findOne({
+            where: { id: playerId, agent: { id: agent.id } }
+        });
+        if (!player) {
+            throw new NotFoundException('Jugador no encontrado');
+        }
+        const media = this.playerMediaRepository.create({
+            ...data,
+            player,
+        });
+        return this.playerMediaRepository.save(media);
+    }
 
-        // 1. Verificar propiedad antes de borrar
+    async removeMedia(userId: string, mediaId: string) {
+        const agent = await this.getAgentByUserId(userId);
+        const media = await this.playerMediaRepository.findOne({
+            where: { id: mediaId },
+            relations: ['player'],
+        });
+        if (!media) throw new NotFoundException('Media no encontrada');
+        if (media.player.agentId !== agent.id) {
+            throw new ForbiddenException('No tienes permiso para eliminar este media');
+        }
+        await this.playerMediaRepository.delete(mediaId);
+        return { message: 'Media eliminada' };
+    }
+
+
+    async remove(id: string, userId: string): Promise<void> {
+        console.log('🗑️  DELETE request for player:', id);
+        console.log('   - User ID:', userId);
+
+        const agent = await this.getAgentByUserId(userId);
+        console.log('   - Agent ID:', agent.id);
+
         const player = await this.findOne(id, userId);
+        console.log('   - Player found:', player.firstName, player.lastName);
+        console.log('   - About to remove from database...');
 
         await this.playerRepository.remove(player);
+        console.log('✅ Player successfully deleted from database');
+    }
+
+    // Jugadores visibles publicamente (solo firmados) para un agente
+    async findPublicByAgent(agentId: string): Promise<Partial<Player>[]> {
+        console.log('🔍 Finding public players for agent:', agentId);
+        console.log('   - Filtering by status:', PlayerStatus.SIGNED);
+
+        const players = await this.playerRepository.find({
+            where: { agentId, status: PlayerStatus.SIGNED },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                position: true,
+                nationality: true,
+                birthDate: true,
+                avatarUrl: true,
+                videoUrl: true,
+                createdAt: true,
+            } as any,
+            order: { createdAt: 'DESC' }
+        });
+
+        console.log(`✅ Found ${players.length} public players`);
+
+        // Let's also check ALL players for this agent to see status distribution
+        const allPlayers = await this.playerRepository.find({
+            where: { agentId },
+            select: { id: true, firstName: true, lastName: true, status: true } as any
+        });
+        console.log('📊 Status distribution for all players:');
+        allPlayers.forEach(p => {
+            console.log(`   - ${p.firstName} ${p.lastName}: ${p.status}`);
+        });
+
+        return players;
     }
 
     async findOnePublic(id: string): Promise<Partial<Player>> {
         const player = await this.playerRepository.findOne({
-            where: { id },
-            relations: ['agent'],
+            where: {
+                id,
+                status: PlayerStatus.SIGNED
+            },
+            relations: ['agent', 'media'],
             select: {
                 id: true,
                 firstName: true,
@@ -113,9 +206,8 @@ export class PlayersService {
                 agent: {
                     id: true,
                     agencyName: true,
-                    // logo: true 
                 }
-            } as any
+            } as any,
         });
 
         if (!player) {
@@ -123,5 +215,70 @@ export class PlayersService {
         }
 
         return player;
+    }
+
+    // Detalle publico validando pertenencia al agente
+    async findOnePublicByAgent(playerId: string, agentId: string): Promise<Partial<Player>> {
+        const player = await this.playerRepository.findOne({
+            where: {
+                id: playerId,
+                agentId,
+                status: PlayerStatus.SIGNED,
+            },
+            relations: ['agent', 'media'],
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                position: true,
+                nationality: true,
+                birthDate: true,
+                height: true,
+                weight: true,
+                foot: true,
+                avatarUrl: true,
+                videoUrl: true,
+                additionalInfo: true,
+                stats: true,
+                agent: {
+                    id: true,
+                    agencyName: true,
+                }
+            } as any,
+        });
+
+        if (!player) {
+            throw new NotFoundException('Player not found');
+        }
+
+        return player;
+    }
+
+    async fixAgencyData() {
+        // 1. Delete the empty duplicate agency
+        const duplicateAgencyId = '6addec02-2703-4df1-9360-91ae92c27a94';
+        const duplicateAgency = await this.agentRepository.findOne({ where: { id: duplicateAgencyId } });
+
+        if (duplicateAgency) {
+            console.log('🗑️ Deleting duplicate agency:', duplicateAgency.agencyName);
+            await this.agentRepository.remove(duplicateAgency);
+        } else {
+            console.log('⚠️ Duplicate agency not found (maybe already deleted)');
+        }
+
+        // 2. Rename the active agency
+        const activeAgencyId = 'f5cc4232-6852-4df2-8555-d0d7c7602a6a';
+        const activeAgency = await this.agentRepository.findOne({ where: { id: activeAgencyId } });
+
+        if (activeAgency) {
+            console.log('✏️ Renaming active agency:', activeAgency.agencyName);
+            activeAgency.agencyName = 'Josefina Deportes';
+            activeAgency.slug = 'josefina-deportes';
+            await this.agentRepository.save(activeAgency);
+            console.log('✅ Agency renamed successfully');
+            return { success: true, message: 'Agency fixed' };
+        }
+
+        return { success: false, message: 'Active agency not found' };
     }
 }

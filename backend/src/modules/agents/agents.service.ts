@@ -60,7 +60,10 @@ export class AgentsService {
     }
 
     async findByUserId(userId: string): Promise<Agent> {
-        const agent = await this.agentsRepository.findOne({ where: { userId } });
+        const agent = await this.agentsRepository.findOne({
+            where: { userId },
+            relations: ['user'],
+        });
         if (!agent) {
             throw new NotFoundException('Agent not found for this user');
         }
@@ -68,7 +71,10 @@ export class AgentsService {
     }
 
     async findBySlug(slug: string): Promise<Agent> {
-        const agent = await this.agentsRepository.findOne({ where: { slug } });
+        const agent = await this.agentsRepository.findOne({
+            where: { slug },
+            relations: ['user'],
+        });
         if (!agent) {
             throw new NotFoundException('Agent not found');
         }
@@ -80,7 +86,34 @@ export class AgentsService {
         return this.agentsRepository.findOne({ where: { id } });
     }
 
+    async updateProfile(userId: string, data: Partial<Agent>): Promise<Agent> {
+        const agent = await this.findByUserId(userId);
+
+        const allowedFields = ['phone', 'location', 'bio', 'website', 'socialLinks', 'logo'] as const;
+        allowedFields.forEach((key) => {
+            if (data[key] !== undefined) {
+                (agent as any)[key] = data[key];
+            }
+        });
+
+        return this.agentsRepository.save(agent);
+    }
+
     async findAll(): Promise<Agent[]> {
         return this.agentsRepository.find({ relations: ['user'] });
+    }
+
+    async delete(id: string): Promise<void> {
+        const agent = await this.agentsRepository.findOne({ where: { id } });
+        if (!agent) {
+            throw new NotFoundException('Agent not found');
+        }
+
+        await this.dataSource.transaction(async (manager) => {
+            await manager.delete(Agent, id);
+            if (agent.userId) {
+                await manager.delete(User, agent.userId);
+            }
+        });
     }
 }

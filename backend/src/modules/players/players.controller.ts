@@ -45,6 +45,9 @@ export class PlayersController {
 
     @Delete(':id')
     remove(@Param('id') id: string, @Request() req) {
+        console.log('🗑️  DELETE /players/:id endpoint called');
+        console.log('   - Player ID:', id);
+        console.log('   - User from JWT:', req.user);
         const userId = req.user.id || req.user.userId;
         return this.playersService.remove(id, userId);
     }

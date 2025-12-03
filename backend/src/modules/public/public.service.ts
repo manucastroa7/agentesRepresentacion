@@ -15,11 +15,11 @@ export class PublicService {
 
     async getAgentPlayers(slug: string) {
         const agent = await this.agentsService.findBySlug(slug);
-        return this.playersService.findAll(agent.id);
+        return this.playersService.findPublicByAgent(agent.id);
     }
 
     async getPlayer(slug: string, playerId: string) {
         const agent = await this.agentsService.findBySlug(slug);
-        return this.playersService.findOne(agent.id, playerId);
+        return this.playersService.findOnePublicByAgent(playerId, agent.id);
     }
 }

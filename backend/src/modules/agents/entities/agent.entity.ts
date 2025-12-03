@@ -24,6 +24,25 @@ export class Agent {
     @Column({ nullable: true })
     logo: string;
 
+    @Column({ nullable: true })
+    phone: string;
+
+    @Column({ nullable: true })
+    location: string;
+
+    @Column({ type: 'text', nullable: true })
+    bio: string;
+
+    @Column({ nullable: true })
+    website: string;
+
+    @Column({ type: 'jsonb', nullable: true, default: () => "'{}'" })
+    socialLinks: {
+        instagram?: string;
+        linkedin?: string;
+        twitter?: string;
+    };
+
     @Column({ unique: true })
     slug: string; // For subdomain
 

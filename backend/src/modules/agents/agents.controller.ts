@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../modules/users/entities/user.entity';
+import { UpdateAgentProfileDto } from './dto/update-agent-profile.dto';
 
 @Controller('agents')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -22,16 +23,32 @@ export class AgentsController {
         return this.agentsService.findAll();
     }
 
+    @Get('profile')
+    @Roles(UserRole.AGENT, UserRole.SUPERADMIN)
+    async getMyProfile(@Request() req) {
+        const userId = req.user.id || req.user.userId;
+        return this.agentsService.findByUserId(userId);
+    }
+
+    @Patch('profile')
+    @Roles(UserRole.AGENT, UserRole.SUPERADMIN)
+    async updateMyProfile(@Request() req, @Body() data: UpdateAgentProfileDto) {
+        const userId = req.user.id || req.user.userId;
+        return this.agentsService.updateProfile(userId, data);
+    }
+
     @Get('me')
     @Roles(UserRole.AGENT)
     async getMyAgency(@Request() req) {
-        return this.agentsService.findByUserId(req.user.userId);
+        const userId = req.user.id || req.user.userId;
+        return this.agentsService.findByUserId(userId);
     }
 
     @Patch('me')
     @Roles(UserRole.AGENT)
     async updateMyAgency(@Request() req, @Body() data: any) {
-        const agent = await this.agentsService.findByUserId(req.user.userId);
+        const userId = req.user.id || req.user.userId;
+        const agent = await this.agentsService.findByUserId(userId);
         return this.agentsService.update(agent.id, data);
     }
 }
