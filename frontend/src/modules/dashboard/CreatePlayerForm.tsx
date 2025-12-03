@@ -7,6 +7,7 @@ import { User, Activity, ImageIcon, Save, ChevronDown, Plus, Trash2, Upload, Lin
 import { useAuthStore } from '@/context/authStore';
 import InputGroup from './components/InputGroup';
 import AttributeSlider from './components/AttributeSlider';
+import { API_BASE_URL } from '@/config/api';
 
 interface FormData {
     firstName: string;
@@ -87,7 +88,7 @@ const CreatePlayerForm = () => {
         if (id && token) {
             const fetchPlayer = async () => {
                 try {
-                    const response = await fetch(`http://localhost:3000/players/${id}`, {
+                    const response = await fetch(`${API_BASE_URL}/players/${id}`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
@@ -232,7 +233,7 @@ const CreatePlayerForm = () => {
         }
 
         try {
-            const url = id ? `http://localhost:3000/players/${id}` : 'http://localhost:3000/players';
+            const url = id ? `${API_BASE_URL}/players/${id}` : `${API_BASE_URL}/players`;
             const method = id ? 'PATCH' : 'POST';
 
             const response = await fetch(url, {

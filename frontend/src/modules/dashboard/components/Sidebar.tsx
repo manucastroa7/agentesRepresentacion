@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/context/authStore';
 import { Users, Search, Settings, LogOut, Menu, X, Plus, Share2, ExternalLink, Copy } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { API_BASE_URL } from '@/config/api';
 
 const Sidebar = () => {
     const { logout, user, token, updateUser } = useAuthStore();
@@ -13,7 +14,7 @@ const Sidebar = () => {
     useEffect(() => {
         const fetchAgentData = async () => {
             try {
-                const response = await fetch('http://localhost:3000/agents/me', {
+                const response = await fetch(`${API_BASE_URL}/agents/me`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

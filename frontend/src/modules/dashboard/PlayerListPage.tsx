@@ -3,6 +3,7 @@ import { Search, Edit2, Trash2, Link as LinkIcon, MapPin, LayoutGrid, List } fro
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/context/authStore';
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from '@/config/api';
 
 const PlayerListPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -15,7 +16,7 @@ const PlayerListPage = () => {
     useEffect(() => {
         const fetchPlayers = async () => {
             try {
-                const response = await fetch('http://localhost:3000/players', {
+                const response = await fetch(`${API_BASE_URL}/players`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -173,7 +174,7 @@ const PlayerListPage = () => {
                                         onClick={async () => {
                                             if (window.confirm('¿Estás seguro de eliminar este jugador? Esta acción no se puede deshacer.')) {
                                                 try {
-                                                    const response = await fetch(`http://localhost:3000/players/${player.id}`, {
+                                                    const response = await fetch(`${API_BASE_URL}/players/${player.id}`, {
                                                         method: 'DELETE',
                                                         headers: {
                                                             'Authorization': `Bearer ${token}`
@@ -284,7 +285,7 @@ const PlayerListPage = () => {
                                         onClick={async () => {
                                             if (window.confirm('¿Estás seguro de eliminar este jugador? Esta acción no se puede deshacer.')) {
                                                 try {
-                                                    const response = await fetch(`http://localhost:3000/players/${player.id}`, {
+                                                const response = await fetch(`${API_BASE_URL}/players/${player.id}`, {
                                                         method: 'DELETE',
                                                         headers: {
                                                             'Authorization': `Bearer ${token}`

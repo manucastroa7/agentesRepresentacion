@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/context/authStore';
 import { VideoGallery } from './components/VideoGallery';
+import { API_BASE_URL } from '@/config/api';
 
 const PlayerProfile = () => {
     const { id } = useParams();
@@ -22,7 +23,7 @@ const PlayerProfile = () => {
         if (!id || !token) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/players/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/players/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

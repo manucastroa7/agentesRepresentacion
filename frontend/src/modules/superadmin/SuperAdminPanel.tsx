@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/context/authStore';
+import { API_BASE_URL } from '@/config/api';
 
 const SuperAdminPanel = () => {
     const navigate = useNavigate();
@@ -20,7 +21,7 @@ const SuperAdminPanel = () => {
 
     const fetchAgents = async () => {
         try {
-            const response = await fetch('http://localhost:3000/agents', {
+            const response = await fetch(`${API_BASE_URL}/agents`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -37,7 +38,7 @@ const SuperAdminPanel = () => {
 
     const onSubmit = async (data: any) => {
         try {
-            const response = await fetch('http://localhost:3000/agents', {
+            const response = await fetch(`${API_BASE_URL}/agents`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -63,7 +64,7 @@ const SuperAdminPanel = () => {
 
     const handleDelete = async (agentId: string) => {
         try {
-            const response = await fetch(`http://localhost:3000/superadmin/agents/${agentId}`, {
+            const response = await fetch(`${API_BASE_URL}/superadmin/agents/${agentId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

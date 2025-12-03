@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Calendar, Ruler, Weight, Activity, Play } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import ShareButtons from '@/components/ShareButtons';
+import { API_BASE_URL } from '@/config/api';
 
 // Reusing the slider component but making it read-only
 const AttributeSlider = ({ label, value, color = "#39FF14" }: { label: string, value: number, color?: string }) => {
@@ -32,7 +33,7 @@ const PublicPlayerProfile = () => {
     useEffect(() => {
         const fetchPlayer = async () => {
             try {
-                const response = await fetch(`http://localhost:3000/public/players/${playerId}`);
+                const response = await fetch(`${API_BASE_URL}/public/players/${playerId}`);
                 if (!response.ok) throw new Error('Jugador no encontrado');
                 const json = await response.json();
                 const data = json.data || json;

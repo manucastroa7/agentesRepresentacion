@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Users, Radar, Calendar, Globe, AlertTriangle, PlayCircle, Image as ImageIcon, Edit2 } from 'lucide-react';
 import { useAuthStore } from '@/context/authStore';
 import { useToast } from '@/hooks/use-toast';
+import { API_BASE_URL } from '@/config/api';
 
 type Player = {
     id: string;
@@ -38,7 +39,7 @@ const DashboardHome = () => {
         const fetchPlayers = async () => {
             if (!token) return;
             try {
-                const response = await fetch('http://localhost:3000/players', {
+                const response = await fetch(`${API_BASE_URL}/players`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (!response.ok) throw new Error(`Status ${response.status}`);

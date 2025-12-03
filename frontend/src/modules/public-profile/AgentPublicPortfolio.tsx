@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, MapPin, Users } from 'lucide-react';
 import ShareButtons from '@/components/ShareButtons';
+import { API_BASE_URL } from '@/config/api';
 
 interface Agent {
     agencyName: string;
@@ -45,7 +46,7 @@ const AgentPublicPortfolio = () => {
     useEffect(() => {
         const fetchPortfolio = async () => {
             try {
-                const response = await fetch(`http://localhost:3000/public/agents/${slug}`);
+                const response = await fetch(`${API_BASE_URL}/public/agents/${slug}`);
                 if (!response.ok) {
                     if (response.status === 404) {
                         setError('Agencia no encontrada');

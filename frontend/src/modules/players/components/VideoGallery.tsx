@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trash2, Upload, Play, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../../../context/authStore';
+import { API_BASE_URL } from '@/config/api';
 
 interface Video {
     id: string;
@@ -43,7 +44,7 @@ export const VideoGallery: React.FC<VideoGalleryProps> = ({ playerId, videos, on
         formData.append('title', videoTitle || file.name.replace(/\.[^/.]+$/, ""));
 
         try {
-            const response = await fetch('http://localhost:3000/players/videos', {
+            const response = await fetch(`${API_BASE_URL}/players/videos`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -72,7 +73,7 @@ export const VideoGallery: React.FC<VideoGalleryProps> = ({ playerId, videos, on
         if (!confirm('¿Estás seguro de que quieres eliminar este video?')) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/players/videos/${videoId}`, {
+            const response = await fetch(`${API_BASE_URL}/players/videos/${videoId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`

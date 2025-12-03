@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { Lock, Upload, Phone, Globe, MapPin, Instagram, Linkedin, Twitter, Shield, Sparkles, Link as LinkIcon } from 'lucide-react';
 import { useAuthStore } from '@/context/authStore';
 import { useToast } from '@/hooks/use-toast';
+import { API_BASE_URL } from '@/config/api';
 
 type FormValues = {
     agencyName: string;
@@ -46,7 +47,7 @@ const AgentProfileSettings = () => {
         const fetchProfile = async () => {
             if (!token) return;
             try {
-                const response = await fetch('http://localhost:3000/agents/profile', {
+                const response = await fetch(`${API_BASE_URL}/agents/profile`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!response.ok) {
@@ -143,7 +144,7 @@ const AgentProfileSettings = () => {
         setIsSaving(true);
 
         try {
-            const response = await fetch('http://localhost:3000/agents/profile', {
+            const response = await fetch(`${API_BASE_URL}/agents/profile`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
