@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   app.enableCors({
     // Permitimos localhost (para tus pruebas) Y cualquier otro origen (*) por ahora
     // Cuando tengas el dominio de Hostinger, cambiarás el '*' por 'https://agentsport.com'

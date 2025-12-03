@@ -55,4 +55,4 @@ import { SeedingService } from './modules/database/seeding.service';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
