@@ -5,14 +5,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    // Permitimos localhost (para tus pruebas) Y cualquier otro origen (*) por ahora
-    // Cuando tengas el dominio de Hostinger, cambiarás el '*' por 'https://agentsport.com'
-    origin: ['http://localhost:5173', '*'],
+    // Permitimos el dominio de producción (desde variable) Y localhost para desarrollo
+    origin: [
+      process.env.FRONTEND_URL, // Esto leerá 'https://agentsport.com.ar'
+      'http://localhost:5173'   // Esto es para cuando trabajas en tu PC
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
-  // Esto está perfecto, Railway inyectará su propio PORT
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
