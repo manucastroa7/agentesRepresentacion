@@ -5,10 +5,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    // Permitimos el dominio de producción (desde variable) Y localhost para desarrollo
     origin: [
-      process.env.FRONTEND_URL, // Esto leerá 'https://agentsport.com.ar'
-      'http://localhost:5173'   // Esto es para cuando trabajas en tu PC
+      'https://agentsport.com.ar', // Versión sin www
+      'https://www.agentsport.com.ar', // Versión CON www (la que te dio error)
+      'http://localhost:5173', // Tu entorno local
+      process.env.FRONTEND_URL, // El de la variable de entorno (por seguridad)
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
