@@ -60,7 +60,7 @@ const LoginPage = () => {
             console.log("👤 5. Rol detectado:", payload.role);
 
             // Actualizar el authStore con el usuario y token
-            const user = {
+            const user = { firstName: payload.firstName, lastName: payload.lastName, agencyName: payload.agencyName, agentSlug: payload.slug, avatarUrl: payload.avatarUrl,
                 id: payload.sub,
                 email: payload.email,
                 role: payload.role as 'superadmin' | 'agent' | 'user'

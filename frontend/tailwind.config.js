@@ -5,7 +5,15 @@ export default {
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
-        extend: {},
+        extend: {
+            fontFamily: {
+                sans: ['Inter', 'sans-serif'],
+                display: ['"Titillium Web"', 'sans-serif'],
+            },
+            colors: {
+                'neon-green': '#39FF14',
+            }
+        },
     },
     plugins: [],
 }

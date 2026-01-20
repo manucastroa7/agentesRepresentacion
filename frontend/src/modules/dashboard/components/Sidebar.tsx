@@ -42,12 +42,26 @@ const Sidebar = () => {
         navigate('/login');
     };
 
-    const navItems = [
-        { path: '/dashboard', icon: Users, label: 'Inicio', implemented: true },
-        { path: '/dashboard/players', icon: Users, label: 'Mi Plantel', implemented: true },
-        { path: '/dashboard/scouting', icon: Search, label: 'Scouting', implemented: true },
-        { path: '/dashboard/settings', icon: Settings, label: 'Configuracion', implemented: true },
-    ];
+    const getNavItems = () => {
+        if (user?.role === 'player') {
+            return [
+                { path: '/dashboard/find-agent', icon: Search, label: 'Buscar Agente', implemented: true },
+                { path: '/dashboard/my-applications', icon: Users, label: 'Mis Solicitudes', implemented: false },
+                { path: '/dashboard/profile', icon: Users, label: 'Mi Perfil', implemented: true },
+            ];
+        } else if (user?.role === 'agent' || user?.role === 'superadmin') {
+            return [
+                { path: '/dashboard', icon: Users, label: 'Inicio', implemented: true },
+                { path: '/dashboard/applications', icon: Users, label: 'Solicitudes', implemented: true },
+                { path: '/dashboard/players', icon: Users, label: 'Mi Plantel', implemented: true },
+                { path: '/dashboard/scouting', icon: Search, label: 'Scouting', implemented: true },
+                { path: '/dashboard/settings', icon: Settings, label: 'Configuracion', implemented: true },
+            ];
+        }
+        return [];
+    };
+
+    const navItems = getNavItems();
 
     const handleNavClick = (e: React.MouseEvent, item: any) => {
         if (!item.implemented) {
@@ -102,16 +116,18 @@ const Sidebar = () => {
                 </div>
 
                 <div className="px-6 py-6">
-                    <button
-                        onClick={() => {
-                            navigate('/dashboard/players/new');
-                            setIsMobileMenuOpen(false);
-                        }}
-                        className="w-full py-3.5 bg-[#39FF14] text-slate-950 font-bold rounded-lg hover:bg-[#32d912] hover:shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all duration-300 flex items-center justify-center gap-2 uppercase tracking-wide text-sm transform active:scale-95"
-                    >
-                        <Plus size={20} />
-                        Nuevo Jugador
-                    </button>
+                    {user?.role === 'agent' && (
+                        <button
+                            onClick={() => {
+                                navigate('/dashboard/players/new');
+                                setIsMobileMenuOpen(false);
+                            }}
+                            className="w-full py-3.5 bg-[#39FF14] text-slate-950 font-bold rounded-lg hover:bg-[#32d912] hover:shadow-[0_0_15px_rgba(57,255,20,0.3)] transition-all duration-300 flex items-center justify-center gap-2 uppercase tracking-wide text-sm transform active:scale-95"
+                        >
+                            <Plus size={20} />
+                            Nuevo Jugador
+                        </button>
+                    )}
                 </div>
 
                 <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
@@ -137,7 +153,7 @@ const Sidebar = () => {
                     ))}
                 </nav>
 
-                {user?.agentSlug && (
+                {user?.role === 'agent' && user?.agentSlug && (
                     <div className="px-6 py-4 border-t border-white/5">
                         <div className="flex items-center gap-2 mb-3">
                             <Share2 size={16} className="text-[#39FF14]" />
@@ -171,7 +187,7 @@ const Sidebar = () => {
                         </div>
                         <div className="overflow-hidden">
                             <p className="text-xs text-slate-400 truncate">Hola,</p>
-                            <p className="text-sm font-bold text-white truncate">{user?.agencyName || user?.name || 'Agente'}</p>
+                            <p className="text-sm font-bold text-white truncate">{user?.agencyName || user?.name || 'Usuario'}</p>
                         </div>
                     </div>
                     <button

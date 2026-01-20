@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, Reorder } from 'framer-motion';
 import * as Tabs from '@radix-ui/react-tabs';
-import { User, Activity, ImageIcon, Save, ChevronDown, Plus, Trash2, Upload, Link as LinkIcon, Lock } from 'lucide-react';
+import * as Accordion from '@radix-ui/react-accordion';
+import { User, Activity, ImageIcon, Save, ChevronDown, Plus, Trash2, Upload, Link as LinkIcon, Lock, GripVertical } from 'lucide-react';
+import MiniPitch from '@/components/soccer/MiniPitch';
+import type { Position } from '@/components/soccer/MiniPitch';
 import { useAuthStore } from '@/context/authStore';
 import InputGroup from './components/InputGroup';
-import AttributeSlider from './components/AttributeSlider';
 import { API_BASE_URL } from '@/config/api';
+import defaultAvatar from '@/assets/default_avatar.png';
 
 interface FormData {
     firstName: string;
     lastName: string;
-    position: string;
+    position: string[]; // Changed to array
+    tacticalPoints?: Array<{ x: number; y: number; label?: string }>;
+    careerHistory: Array<{ club: string; year: string }>;
+    showCareerHistory: boolean;
     nationality: string;
     foot: string;
     height: string;
@@ -21,6 +27,8 @@ interface FormData {
     avatarUrl: string;
     videoUrl: string;
     status: string;
+    club: string;
+    marketValue: string;
     stats: {
         speed: number;
         physical: number;
@@ -57,7 +65,10 @@ const CreatePlayerForm = () => {
         defaultValues: {
             firstName: '',
             lastName: '',
-            position: '',
+            position: [],
+            tacticalPoints: [],
+            careerHistory: [],
+            showCareerHistory: true,
             nationality: '',
             foot: '',
             height: '',
@@ -66,6 +77,8 @@ const CreatePlayerForm = () => {
             avatarUrl: '',
             videoUrl: '',
             status: 'signed',
+            club: '',
+            marketValue: '',
             stats: {
                 speed: 50,
                 physical: 50,
@@ -113,7 +126,11 @@ const CreatePlayerForm = () => {
                                 shooting: 50,
                                 passing: 50
                             },
-                            additionalInfo: data.additionalInfo || []
+                            additionalInfo: data.additionalInfo || [],
+                            careerHistory: data.careerHistory || [], // Ensure array logic
+                            videoList: data.videoList && data.videoList.length > 0
+                                ? data.videoList
+                                : data.videoUrl ? [{ url: data.videoUrl, title: 'Highlight Principal' }] : []
                         };
                         console.log("📥 Player Data Loaded:", formattedData);
                         reset(formattedData);
@@ -135,6 +152,23 @@ const CreatePlayerForm = () => {
         control,
         name: "additionalInfo"
     });
+
+    const { fields: careerFields, append: appendCareer, remove: removeCareer, replace } = useFieldArray({
+        control,
+        name: "careerHistory"
+    });
+
+    const { fields: videoFields, append: appendVideo, remove: removeVideo } = useFieldArray({
+        control,
+        name: "videoList"
+    });
+
+    const POSITION_CATEGORIES = {
+        'Portero': ['Portero'],
+        'Defensa': ['Lateral derecho', 'Central derecho', 'Central izquierdo', 'Lateral izquierdo'],
+        'Mediocampista': ['Volante por derecha', 'Volante central', 'Volante izquierdo', 'Enganche'],
+        'Delantero': ['Extremo derecho', 'Media Punta', 'Extremo izquierdo', 'Delantero Centro']
+    };
 
     const [activeTab, setActiveTab] = useState('personal');
     const [dragActive, setDragActive] = useState(false);
@@ -209,12 +243,18 @@ const CreatePlayerForm = () => {
             height: parseFloat(data.height),
             weight: parseFloat(data.weight),
             birthDate: data.birthDate,
-            avatarUrl: data.avatarUrl || 'https://via.placeholder.com/150',
+            avatarUrl: data.avatarUrl || defaultAvatar,
             media: [],
             stats: data.stats,
             status: data.status,
+            club: data.club,
+            marketValue: data.marketValue,
             videoUrl: data.videoUrl,
+            videoList: data.videoList, // Added videoList to payload
+            careerHistory: data.careerHistory, // ✅ Fixed: Added missing field
             additionalInfo: data.additionalInfo,
+            showCareerHistory: data.showCareerHistory,
+            tacticalPoints: data.tacticalPoints,
             privateDetails: data.privateDetails
         };
 
@@ -308,7 +348,7 @@ const CreatePlayerForm = () => {
                     <Tabs.List className="flex border-b border-white/5 bg-slate-950/50 px-6 pt-2">
                         {[
                             { id: 'personal', label: 'Datos Personales', icon: User },
-                            { id: 'technical', label: 'Perfil Técnico', icon: Activity },
+                            // { id: 'technical', label: 'Perfil Técnico', icon: Activity },
                             { id: 'multimedia', label: 'Multimedia', icon: ImageIcon },
                             { id: 'private', label: 'Gestión Privada 🔒', icon: Lock },
                         ].map((tab) => (
@@ -384,27 +424,97 @@ const CreatePlayerForm = () => {
                                         </InputGroup>
                                     </div>
 
-                                    <InputGroup label="Posición Principal">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {['Portero', 'Defensa', 'Mediocampista', 'Delantero'].map((pos) => (
-                                                <label
-                                                    key={pos}
-                                                    className={`
-                                                            flex items-center justify-center px-4 py-3 rounded-xl border cursor-pointer transition-all
-                                                            ${watch('position') === pos
-                                                            ? 'bg-[#39FF14]/10 border-[#39FF14] text-[#39FF14] font-bold'
-                                                            : 'bg-slate-950 border-white/10 text-slate-400 hover:border-white/30'}
-                                                        `}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        value={pos}
-                                                        {...register('position')}
-                                                        className="hidden"
-                                                    />
-                                                    {pos}
-                                                </label>
-                                            ))}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <InputGroup label="Club Actual">
+                                            <input
+                                                {...register('club')}
+                                                className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#39FF14] transition-all placeholder:text-slate-600"
+                                                placeholder="Ej: Boca Juniors"
+                                            />
+                                        </InputGroup>
+                                        <InputGroup label="Valor de Mercado">
+                                            <input
+                                                {...register('marketValue')}
+                                                className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#39FF14] transition-all placeholder:text-slate-600"
+                                                placeholder="Ej: $ 1.5M"
+                                            />
+                                        </InputGroup>
+                                    </div>
+
+                                    <InputGroup label="Posiciones de Juego">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                            {/* Position Selection */}
+                                            <div className="space-y-4">
+                                                <Accordion.Root type="multiple" className="space-y-2">
+                                                    {Object.entries(POSITION_CATEGORIES).map(([category, positions]) => (
+                                                        <Accordion.Item key={category} value={category} className="bg-slate-900/30 border border-white/5 rounded-xl overflow-hidden">
+                                                            <Accordion.Header>
+                                                                <Accordion.Trigger className="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-white/5 transition-colors group data-[state=open]:text-[#39FF14]">
+                                                                    {category}
+                                                                    <ChevronDown className="text-slate-500 group-hover:text-white transition-transform duration-300 group-data-[state=open]:rotate-180 group-data-[state=open]:text-[#39FF14]" size={16} />
+                                                                </Accordion.Trigger>
+                                                            </Accordion.Header>
+                                                            <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+                                                                <div className="p-4 grid grid-cols-2 gap-2 border-t border-white/5 bg-slate-950/30">
+                                                                    {positions.map((pos) => {
+                                                                        const currentPositions = watch('position') || [];
+                                                                        const isSelected = currentPositions.includes(pos);
+                                                                        return (
+                                                                            <button
+                                                                                key={pos}
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    const newPositions = isSelected
+                                                                                        ? currentPositions.filter(p => p !== pos)
+                                                                                        : [...currentPositions, pos];
+                                                                                    setValue('position', newPositions);
+                                                                                }}
+                                                                                className={`
+                                                                                    px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 border
+                                                                                    ${isSelected
+                                                                                        ? 'bg-[#39FF14] text-slate-950 border-[#39FF14] shadow-[0_0_10px_rgba(57,255,20,0.3)]'
+                                                                                        : 'bg-slate-900 border-white/10 text-slate-400 hover:border-white/30 hover:text-white'
+                                                                                    }
+                                                                                `}
+                                                                            >
+                                                                                {pos}
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </Accordion.Content>
+                                                        </Accordion.Item>
+                                                    ))}
+                                                </Accordion.Root>
+                                            </div>
+
+                                            {/* Pitch Visualizer */}
+                                            <div className="flex flex-col items-center justify-center">
+                                                <MiniPitch
+                                                    positions={watch('position') || []}
+                                                    customPoints={watch('tacticalPoints') || []}
+                                                    interactive={true}
+                                                    onPointClick={(x, y) => {
+                                                        const currentPoints = watch('tacticalPoints') || [];
+                                                        // Limit to e.g. 3 points or just append
+                                                        setValue('tacticalPoints', [...currentPoints, { x, y }]);
+                                                    }}
+                                                />
+                                                <div className="flex flex-col items-center mt-3 gap-2">
+                                                    <p className="text-slate-500 text-xs text-center italic">
+                                                        Haz clic en el campo para marcar la posición exacta.
+                                                    </p>
+                                                    {(watch('tacticalPoints') || []).length > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setValue('tacticalPoints', [])}
+                                                            className="text-xs text-red-400 hover:text-red-300 underline"
+                                                        >
+                                                            Limpiar posiciones manuales
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     </InputGroup>
                                 </div>
@@ -472,6 +582,89 @@ const CreatePlayerForm = () => {
                                         </div>
                                     </InputGroup>
 
+                                    {/* Career History Section */}
+                                    <div className="pt-6 border-t border-white/10">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-4">
+                                                <label className="text-slate-400 text-sm font-bold uppercase tracking-wider">Trayectoria / Historial de Clubes</label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('showCareerHistory')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-400">Mostrar en perfil público</span>
+                                                </label>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => appendCareer({ club: '', year: '' })}
+                                                className="text-[#39FF14] text-xs font-bold uppercase tracking-wider hover:underline flex items-center gap-1"
+                                            >
+                                                <Plus size={14} /> Agregar Club
+                                            </button>
+                                        </div>
+
+                                        <Reorder.Group axis="y" values={careerFields} onReorder={replace} className="space-y-3">
+                                            {careerFields.map((field, index) => (
+                                                <Reorder.Item
+                                                    key={field.id}
+                                                    value={field}
+                                                    whileDrag={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0,0,0,0.3)", zIndex: 50 }}
+                                                    className="group bg-slate-900/50 border border-white/5 rounded-xl p-3 flex items-center gap-3 hover:border-white/10 transition-all cursor-grab active:cursor-grabbing"
+                                                >
+                                                    {/* Drag Handle */}
+                                                    <div className="pr-3 border-r border-white/5 text-slate-600 group-hover:text-slate-400 transition-colors">
+                                                        <GripVertical size={20} />
+                                                    </div>
+
+                                                    {/* Inputs Container */}
+                                                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                        <div className="sm:col-span-2">
+                                                            <input
+                                                                {...register(`careerHistory.${index}.club` as const, { required: true })}
+                                                                placeholder="Club / Equipo"
+                                                                className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#39FF14] outline-none transition-colors"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <input
+                                                                {...register(`careerHistory.${index}.year` as const, { required: true })}
+                                                                placeholder="Temporada (Ej: 2023)"
+                                                                className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#39FF14] outline-none transition-colors"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Delete Action */}
+                                                    <div className="pl-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeCareer(index)}
+                                                            className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                                            title="Eliminar registro"
+                                                            onPointerDown={(e) => e.stopPropagation()}
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
+                                                </Reorder.Item>
+                                            ))}
+                                            {careerFields.length === 0 && (
+                                                <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-slate-900/30">
+                                                    <p className="text-slate-500 text-sm">No hay clubes registrados.</p>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => appendCareer({ club: '', year: '' })}
+                                                        className="mt-2 text-[#39FF14] text-xs font-bold uppercase hover:underline"
+                                                    >
+                                                        Agregar el primer club
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </Reorder.Group>
+                                    </div>
+
                                     {/* Custom Fields Section */}
                                     <div className="pt-6 border-t border-white/10">
                                         <div className="flex items-center justify-between mb-4">
@@ -516,7 +709,8 @@ const CreatePlayerForm = () => {
                             </motion.div>
                         </Tabs.Content>
 
-                        {/* --- TAB 2: TECHNICAL PROFILE --- */}
+                        {/* --- TAB 2: TECHNICAL PROFILE (HIDDEN) --- */}
+                        {/* 
                         <Tabs.Content value="technical" className="outline-none focus:outline-none">
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
@@ -574,6 +768,7 @@ const CreatePlayerForm = () => {
                                 </div>
                             </motion.div>
                         </Tabs.Content>
+                        */}
 
                         {/* --- TAB 3: MULTIMEDIA --- */}
                         <Tabs.Content value="multimedia" className="outline-none focus:outline-none">
@@ -682,32 +877,44 @@ const CreatePlayerForm = () => {
                                             </div>
                                         </InputGroup>
                                     ) : (
-                                        <InputGroup label="Enlace de YouTube / Vimeo">
-                                            <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                    <LinkIcon className="h-5 w-5 text-slate-500" />
-                                                </div>
-                                                <input
-                                                    type="url"
-                                                    {...register('videoUrl')}
-                                                    className="w-full bg-slate-950 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-[#39FF14] transition-all placeholder:text-slate-600"
-                                                    placeholder="https://youtube.com/watch?v=..."
-                                                />
-                                            </div>
+                                        <div className="space-y-4">
+                                            {videoFields.map((field, index) => (
+                                                <div key={field.id} className="relative bg-slate-900/50 p-4 rounded-xl border border-white/5 space-y-3">
+                                                    <div className="flex justify-between items-start">
+                                                        <span className="text-xs font-bold text-[#39FF14] uppercase">Video {index + 1}</span>
+                                                        <button type="button" onClick={() => removeVideo(index)} className="text-slate-500 hover:text-red-500 transition-colors">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
 
-                                            {/* Fallback Instruction */}
-                                            <div className="mt-4 bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3">
-                                                <div className="shrink-0">
-                                                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold">i</div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                        <div className="md:col-span-1">
+                                                            <input
+                                                                {...register(`videoList.${index}.title`)}
+                                                                placeholder="Título (ej: 2024)"
+                                                                className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#39FF14] focus:outline-none"
+                                                            />
+                                                        </div>
+                                                        <div className="md:col-span-2">
+                                                            <input
+                                                                {...register(`videoList.${index}.url`, { required: 'URL requerida' })}
+                                                                placeholder="https://youtube.com/..."
+                                                                className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#39FF14] focus:outline-none"
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <h5 className="text-blue-400 font-bold text-sm mb-1">¿Video muy pesado?</h5>
-                                                    <p className="text-slate-400 text-xs leading-relaxed">
-                                                        Si tu archivo es muy grande (+100MB), te recomendamos subirlo a YouTube como <strong>"No Listado"</strong> y pegar el enlace aquí. Esto asegura que cargue rápido para todos.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </InputGroup>
+                                            ))}
+
+                                            <button
+                                                type="button"
+                                                onClick={() => appendVideo({ url: '', title: '' })}
+                                                className="w-full py-3 border-2 border-dashed border-white/10 rounded-xl text-slate-400 hover:text-white hover:border-[#39FF14]/50 hover:bg-[#39FF14]/5 transition-all text-sm font-bold flex items-center justify-center gap-2"
+                                            >
+                                                <Plus size={16} />
+                                                AGREGAR LINK DE VIDEO
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </motion.div>

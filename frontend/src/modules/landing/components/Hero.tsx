@@ -1,84 +1,87 @@
-import { ArrowRight, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import heroCoach from '@/assets/hero_coach.png';
+import heroPlayer from '@/assets/hero_player.png';
+import heroClub from '@/assets/hero_club.png';
 
 const Hero = () => {
     return (
-        <div className="relative bg-secondary overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-football-pattern opacity-10 pointer-events-none"></div>
+        <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden bg-slate-950">
+            {/* Background Texture */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute inset-0 bg-[#020617] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(57,255,20,0.05),rgba(255,255,255,0))]"></div>
+                <div className="absolute inset-0 bg-grid-white/[0.02] bg-[length:50px_50px]"></div>
+            </div>
 
-            {/* Green Glow */}
-            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-accent/10 rounded-full blur-3xl"></div>
+            <div className="container mx-auto px-4 relative z-10">
+                <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
-            <div className="container mx-auto px-6 pt-20 pb-24 relative z-10">
-                <div className="flex flex-col lg:flex-row items-center gap-12">
-
-                    {/* Text Content */}
-                    <div className="flex-1 text-center lg:text-left">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-primary text-sm font-medium mb-6 backdrop-blur-sm">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                            </span>
-                            Plataforma #1 para Agentes FIFA
-                        </div>
-
-                        <h1 className="text-5xl lg:text-7xl font-display font-bold text-white leading-tight mb-6">
-                            Potencia tu <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Agencia</span> <br />
-                            al Siguiente Nivel
+                    {/* LEFT COLUMN: TEXT */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className="text-left z-20 pl-6"
+                    >
+                        <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-black text-white leading-[0.9] tracking-tighter self-start italic mb-8 uppercase drop-shadow-2xl">
+                            CONECTAMOS EL ECOSISTEMA DEL <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#39FF14] to-emerald-500 whitespace-nowrap drop-shadow-sm filter">FÚTBOL PROFESIONAL</span>
                         </h1>
 
-                        <p className="text-lg text-gray-400 mb-8 max-w-xl mx-auto lg:mx-0 font-light">
-                            Gestiona jugadores, contratos y oportunidades en una sola plataforma.
-                            Diseñada para la velocidad del mercado de pases moderno.
+                        <p className="text-xl text-slate-400 mb-10 max-w-xl leading-relaxed font-medium">
+                            Gestión para <span className="text-white font-bold">Agentes</span>.
+                            Oportunidades para <span className="text-white font-bold">Jugadores</span>.
+                            Soluciones para <span className="text-white font-bold">Clubes</span>.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                            <a href="#demo-form" className="w-full sm:w-auto px-8 py-4 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg transition-all transform hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/25 flex items-center justify-center gap-2">
-                                Solicitar Demo
-                                <ArrowRight className="w-5 h-5" />
-                            </a>
-                            <Link to="/login" className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-medium rounded-lg transition-all backdrop-blur-sm flex items-center justify-center">
-                                Iniciar Sesión
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <Link to="/register">
+                                <Button size="lg" className="rounded-full h-14 px-8 bg-[#39FF14] hover:bg-[#32d612] text-slate-950 font-bold text-lg uppercase tracking-wider shadow-[0_0_20px_rgba(57,255,20,0.3)] transition-all hover:scale-105 active:scale-95">
+                                    Empezar Ahora <ArrowRight className="ml-2 h-5 w-5" />
+                                </Button>
                             </Link>
                         </div>
+                    </motion.div>
 
-                        <div className="mt-10 flex items-center justify-center lg:justify-start gap-6 text-sm text-gray-500">
-                            <div className="flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4 text-primary" />
-                                <span>Sin tarjeta de crédito</span>
+                    {/* RIGHT COLUMN: TILTED BARS COMPOSITION */}
+                    <div className="relative h-[600px] w-full flex items-center justify-center">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            className="flex gap-4 md:gap-6 justify-center items-center transform -skew-x-12"
+                        >
+                            {/* Bar 1: Agent (Left) - Using Coach Image as per user reference */}
+                            <div
+                                className="relative w-28 md:w-44 h-80 md:h-[450px] rounded-2xl overflow-hidden border-2 border-[#39FF14]/50 hover:border-[#39FF14] shadow-[0_0_15px_rgba(57,255,20,0.2)] transition-all duration-500 group bg-slate-900 bg-cover bg-center"
+                                style={{ backgroundImage: `url(${heroCoach})` }}
+                            >
+                                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500"></div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <CheckCircle className="w-4 h-4 text-primary" />
-                                <span>Setup en 24hs</span>
+
+                            {/* Bar 2: Player (Center - Tallest) */}
+                            <div
+                                className="relative w-32 md:w-52 h-96 md:h-[600px] rounded-2xl overflow-hidden border-2 border-[#39FF14] shadow-[0_0_30px_rgba(57,255,20,0.4)] transition-all duration-500 z-10 group mt-[-30px] bg-slate-900 bg-cover bg-center"
+                                style={{ backgroundImage: `url(${heroPlayer})` }}
+                            >
+                                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500"></div>
                             </div>
-                        </div>
+
+                            {/* Bar 3: Club (Right) - Using Business/Agent Image */}
+                            <div
+                                className="relative w-28 md:w-44 h-80 md:h-[450px] rounded-2xl overflow-hidden border-2 border-[#39FF14]/50 hover:border-[#39FF14] shadow-[0_0_15px_rgba(57,255,20,0.2)] transition-all duration-500 group bg-slate-900 bg-cover bg-center"
+                                style={{ backgroundImage: `url(${heroClub})` }}
+                            >
+                                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-500"></div>
+                            </div>
+                        </motion.div>
                     </div>
 
-                    {/* Hero Image / Mockup */}
-                    <div className="flex-1 relative w-full max-w-lg lg:max-w-none">
-                        <div className="relative rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 p-2 backdrop-blur-md shadow-2xl transform rotate-1 hover:rotate-0 transition-transform duration-700">
-                            <div className="rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center relative group">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent opacity-50"></div>
-                                <div className="text-white/20 font-display text-4xl font-bold">Dashboard Preview</div>
-
-                                {/* Floating Elements */}
-                                <div className="absolute -top-6 -right-6 bg-card text-card-foreground p-4 rounded-lg shadow-xl border border-border animate-bounce duration-[3000ms]">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-gray-200"></div>
-                                        <div>
-                                            <div className="h-2 w-24 bg-gray-200 rounded mb-1"></div>
-                                            <div className="h-2 w-16 bg-gray-200 rounded"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
-        </div>
+        </section>
     );
 };
 

@@ -10,7 +10,7 @@ type Player = {
     id: string;
     firstName: string;
     lastName: string;
-    position?: string;
+    position?: string | string[];
     birthDate?: string;
     status?: string;
     avatarUrl?: string;
@@ -30,9 +30,10 @@ const POSITION_GROUPS = [
 const COLORS = ['#39FF14', '#0EA5E9', '#E2E8F0', '#94A3B8'];
 
 const DashboardHome = () => {
-    const { token } = useAuthStore();
+    const { token, user } = useAuthStore();
     const { toast } = useToast();
     const [players, setPlayers] = useState<Player[]>([]);
+    const [agentSlug, setAgentSlug] = useState<string | null>(user?.agentSlug || null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -59,6 +60,28 @@ const DashboardHome = () => {
         };
         fetchPlayers();
     }, [token, toast]);
+
+    useEffect(() => {
+        const fetchAgentProfile = async () => {
+            if (!token) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/agents/profile`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const json = await response.json();
+                    const data = json.data || json;
+                    setAgentSlug(data.slug);
+                }
+            } catch (error) {
+                console.error('Error fetching agent profile', error);
+            }
+        };
+
+        if (!user?.agentSlug) {
+            fetchAgentProfile();
+        }
+    }, [token, user?.agentSlug]);
 
     const {
         signedPlayers,
@@ -92,8 +115,9 @@ const DashboardHome = () => {
             ? Math.round((players.filter(p => !!p.videoUrl).length / players.length) * 100)
             : 0;
 
-        const groupPosition = (pos?: string) => {
-            const normalized = (pos || '').toLowerCase();
+        const groupPosition = (pos?: string | string[]) => {
+            const primaryPos = Array.isArray(pos) ? pos[0] : pos;
+            const normalized = (primaryPos || '').toLowerCase();
             const found = POSITION_GROUPS.find(group =>
                 group.keywords.some(k => normalized.includes(k))
             );
@@ -128,6 +152,17 @@ const DashboardHome = () => {
         };
     }, [players]);
 
+    const copyAgencyLink = () => {
+        if (!agentSlug) return;
+        const url = `${window.location.origin}/u/${agentSlug}`;
+        navigator.clipboard.writeText(url);
+        toast({
+            title: "Enlace de Agencia Copiado",
+            description: "El link de tu portafolio público ha sido copiado.",
+            className: "bg-[#39FF14] text-black border-none"
+        });
+    };
+
     const kpiCards = [
         {
             title: 'Plantel',
@@ -161,9 +196,19 @@ const DashboardHome = () => {
 
     return (
         <div className="space-y-6 pb-10">
-            <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Centro de comando</p>
-                <h1 className="text-3xl font-display font-bold text-white mt-1">Dashboard</h1>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Centro de comando</p>
+                    <h1 className="text-3xl font-display font-bold text-white mt-1">Dashboard</h1>
+                </div>
+                <button
+                    onClick={copyAgencyLink}
+                    disabled={!agentSlug}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <Globe size={16} />
+                    Compartir Sitio Público
+                </button>
             </div>
 
             {/* KPIs */}

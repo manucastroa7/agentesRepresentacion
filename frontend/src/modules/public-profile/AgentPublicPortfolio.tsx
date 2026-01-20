@@ -16,7 +16,7 @@ interface Player {
     id: string;
     firstName: string;
     lastName: string;
-    position: string;
+    position: string | string[];
     nationality: string;
     birthDate: string;
     avatarUrl: string | null;
@@ -34,6 +34,14 @@ const POSITION_FILTERS = [
     { label: 'Mediocampista', value: 'mediocampista' },
     { label: 'Delantero', value: 'delantero' },
 ];
+
+
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+    'portero': ['portero', 'arquero', 'goalkeeper', 'gk'],
+    'defensa': ['defensa', 'defender', 'central', 'lateral', 'carrilero', 'libero', 'stopper', 'df', 'cb', 'rb', 'lb'],
+    'mediocampista': ['mediocampista', 'medio', 'midfielder', 'volante', 'enganche', 'pivote', 'interior', 'mco', 'mcd', 'mc'],
+    'delantero': ['delantero', 'forward', 'atacante', 'punta', 'extremo', 'ariete', 'st', 'rw', 'lw']
+};
 
 const AgentPublicPortfolio = () => {
     const { slug } = useParams<{ slug: string }>();
@@ -75,7 +83,22 @@ const AgentPublicPortfolio = () => {
 
     const filteredPlayers = data?.players.filter(player => {
         if (selectedFilter === 'all') return true;
-        return player.position.toLowerCase().includes(selectedFilter.toLowerCase());
+
+        const positions = Array.isArray(player.position) ? player.position : [player.position];
+        const keywords = CATEGORY_KEYWORDS[selectedFilter] || [selectedFilter];
+
+        // Check if any of the player's positions match any of the keywords for the selected category
+        return positions.some(pos => {
+            const lowerPos = (pos || '').toLowerCase();
+
+            // Fix conflict: "Volante Central" matches "central" keyword in 'defensa', but it is a midfielder.
+            // Explicitly exclude 'volante' from 'defensa' filter.
+            if (selectedFilter === 'defensa' && lowerPos.includes('volante')) {
+                return false;
+            }
+
+            return keywords.some(keyword => lowerPos.includes(keyword));
+        });
     }) || [];
 
     const calculateAge = (birthDate: string) => {
@@ -139,7 +162,7 @@ const AgentPublicPortfolio = () => {
                                     <img
                                         src={data.agent.logo}
                                         alt={data.agent.agencyName}
-                                        className="h-24 w-24 object-contain"
+                                        className="h-32 w-32 object-contain"
                                     />
                                 </div>
                             )}
@@ -226,7 +249,7 @@ const AgentPublicPortfolio = () => {
                                         {/* Player Info Overlay */}
                                         <div className="absolute bottom-0 left-0 p-4 w-full">
                                             <p className="text-[#39FF14] text-xs font-bold tracking-wider uppercase mb-1">
-                                                {player.position}
+                                                {Array.isArray(player.position) ? player.position.join(', ') : player.position}
                                             </p>
                                             <h3 className="text-xl font-display font-bold text-white leading-tight">
                                                 {player.firstName} {player.lastName}

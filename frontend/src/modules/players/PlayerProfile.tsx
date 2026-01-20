@@ -5,6 +5,7 @@ import {
     ChevronLeft, MapPin, Calendar,
     TrendingUp, ArrowRightLeft, Shield, Trophy
 } from 'lucide-react';
+import MiniPitch from '@/components/soccer/MiniPitch';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/context/authStore';
 import { VideoGallery } from './components/VideoGallery';
@@ -124,7 +125,7 @@ const PlayerProfile = () => {
 
     const tabs = [
         { id: 'overview', label: 'Resumen' },
-        { id: 'stats', label: 'Estadísticas' },
+        // { id: 'stats', label: 'Estadísticas' },
         { id: 'video', label: 'Video Highlights' },
         { id: 'transfers', label: 'Transferencias' }
     ];
@@ -269,6 +270,16 @@ const PlayerProfile = () => {
                                                     <p className="text-sm text-blue-700">Pase</p>
                                                 </div>
                                             </div>
+
+                                        </div>
+
+                                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+                                            <h3 className="text-lg font-bold text-slate-900 mb-4 w-full text-left">Posición Táctica</h3>
+                                            <MiniPitch
+                                                positions={Array.isArray(player.position) ? player.position : [player.position]}
+                                                customPoints={player.tacticalPoints || []}
+                                                className="bg-emerald-600"
+                                            />
                                         </div>
 
                                         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -343,7 +354,7 @@ const PlayerProfile = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

@@ -4,10 +4,13 @@ import { persist } from 'zustand/middleware';
 interface User {
     id: string;
     email: string;
-    role: 'superadmin' | 'agent' | 'user';
+    role: 'superadmin' | 'agent' | 'player' | 'club';
+    firstName?: string;
+    lastName?: string;
     name?: string;
     agencyName?: string;
     agentSlug?: string;
+    avatarUrl?: string;
 }
 
 interface AuthState {

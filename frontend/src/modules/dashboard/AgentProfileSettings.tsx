@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Lock, Upload, Phone, Globe, MapPin, Instagram, Linkedin, Twitter, Shield, Sparkles, Link as LinkIcon } from 'lucide-react';
+import { Lock, Upload, Phone, Globe, MapPin, Instagram, Linkedin, Twitter, Shield, Link as LinkIcon } from 'lucide-react';
 import { useAuthStore } from '@/context/authStore';
 import { useToast } from '@/hooks/use-toast';
+
 import { API_BASE_URL } from '@/config/api';
 
 type FormValues = {
@@ -18,14 +19,14 @@ type FormValues = {
     twitter: string;
 };
 
-const CLOUD_NAME = 'drghwlpwe'; // TODO: centralize in env/config
-const UPLOAD_PRESET = 'agentsport_unsigned';
+// Local upload doesn't need cloud constants
 
 const AgentProfileSettings = () => {
     const { token, user } = useAuthStore();
     const { toast } = useToast();
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [uploadingLogo, setUploadingLogo] = useState(false);
+
     const [isSaving, setIsSaving] = useState(false);
 
     const { register, handleSubmit, reset, setValue, formState: { isSubmitting } } = useForm<FormValues>({
@@ -90,11 +91,11 @@ const AgentProfileSettings = () => {
         setUploadingLogo(true);
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('upload_preset', UPLOAD_PRESET);
 
         try {
-            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+            const response = await fetch(`${API_BASE_URL}/files/upload`, {
                 method: 'POST',
+                // No headers needed for FormData, browser sets multipart/form-data
                 body: formData,
             });
             const data = await response.json();
@@ -202,10 +203,7 @@ const AgentProfileSettings = () => {
                     <h1 className="text-4xl font-display font-bold text-white mt-2">Configuración</h1>
                     <p className="text-slate-400">Actualiza tu branding y datos de contacto. La identidad se mantiene protegida.</p>
                 </div>
-                <div className="hidden md:flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-slate-200">
-                    <Sparkles className="text-[#39FF14]" size={18} />
-                    <span className="text-sm">Modo Dark Sport Premium</span>
-                </div>
+
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
@@ -285,7 +283,7 @@ const AgentProfileSettings = () => {
                                     className={`px-4 py-2 rounded-lg border border-[#39FF14]/40 text-[#39FF14] hover:bg-[#39FF14]/10 transition-all text-sm font-semibold ${uploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     disabled={uploadingLogo}
                                 >
-                                    {uploadingLogo ? 'Subiendo...' : 'Subir a Cloudinary'}
+                                    {uploadingLogo ? 'Subiendo...' : 'Subir'}
                                 </button>
                                 <p className="text-slate-400 text-sm flex items-center gap-2">
                                     <LinkIcon size={14} className="text-slate-500" /> Puedes pegar una URL directa si ya tienes el logo.

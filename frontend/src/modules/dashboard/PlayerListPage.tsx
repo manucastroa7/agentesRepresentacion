@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Edit2, Trash2, Link as LinkIcon, MapPin, LayoutGrid, List } from 'lucide-react';
+import { Search, Edit2, Trash2, MapPin, LayoutGrid, List, Share2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/context/authStore';
 import { useToast } from "@/hooks/use-toast";
@@ -41,11 +41,19 @@ const PlayerListPage = () => {
         }
     }, [token]);
 
-    const filteredPlayers = players.filter(player =>
-        player.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        player.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        player.position.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredPlayers = players.filter(player => {
+        const positions = Array.isArray(player.position) ? player.position : (player.position ? [player.position] : []);
+        const positionMatch = positions.some((pos: any) => typeof pos === 'string' && pos.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        const firstName = player.firstName || '';
+        const lastName = player.lastName || '';
+
+        return (
+            firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            positionMatch
+        );
+    });
 
     return (
         <div className="space-y-8">
@@ -137,7 +145,7 @@ const PlayerListPage = () => {
 
                                 <div className="absolute bottom-0 left-0 p-4 w-full">
                                     <p className="text-[#39FF14] text-xs font-bold tracking-wider uppercase mb-1">
-                                        {player.position}
+                                        {Array.isArray(player.position) ? player.position.join(', ') : player.position}
                                     </p>
                                     <h3 className="text-xl font-display font-bold text-white leading-tight">
                                         {player.firstName} {player.lastName}
@@ -154,12 +162,17 @@ const PlayerListPage = () => {
                                 <button
                                     onClick={() => {
                                         const url = `${window.location.origin}/p/${player.id}`;
-                                        window.open(url, '_blank');
+                                        navigator.clipboard.writeText(url);
+                                        toast({
+                                            title: "Enlace copiado",
+                                            description: "El link del perfil público ha sido copiado al portapapeles.",
+                                            className: "bg-[#39FF14] text-black border-none"
+                                        });
                                     }}
                                     className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-[#39FF14]/10 hover:bg-[#39FF14] text-[#39FF14] hover:text-slate-950 rounded-lg transition-all duration-300 text-sm font-bold group/btn"
                                 >
-                                    <LinkIcon size={16} />
-                                    <span className="hidden sm:inline">Link Público</span>
+                                    <Share2 size={16} />
+                                    <span className="hidden sm:inline">Compartir</span>
                                 </button>
 
                                 <div className="flex items-center gap-1">
@@ -243,7 +256,7 @@ const PlayerListPage = () => {
                                                 {player.firstName} {player.lastName}
                                             </h3>
                                             <p className="text-[#39FF14] text-xs font-bold tracking-wider uppercase mt-0.5">
-                                                {player.position}
+                                                {Array.isArray(player.position) ? player.position.join(', ') : player.position}
                                             </p>
                                         </div>
 
@@ -266,13 +279,18 @@ const PlayerListPage = () => {
                                     <button
                                         onClick={() => {
                                             const url = `${window.location.origin}/p/${player.id}`;
-                                            window.open(url, '_blank');
+                                            navigator.clipboard.writeText(url);
+                                            toast({
+                                                title: "Enlace copiado",
+                                                description: "El link del perfil público ha sido copiado al portapapeles.",
+                                                className: "bg-[#39FF14] text-black border-none"
+                                            });
                                         }}
                                         className="flex items-center gap-2 py-2 px-3 bg-[#39FF14]/10 hover:bg-[#39FF14] text-[#39FF14] hover:text-slate-950 rounded-lg transition-all duration-300 text-sm font-bold"
-                                        title="Abrir perfil público"
+                                        title="Compartir perfil"
                                     >
-                                        <LinkIcon size={16} />
-                                        <span className="hidden lg:inline">Ver</span>
+                                        <Share2 size={16} />
+                                        <span className="hidden lg:inline">Compartir</span>
                                     </button>
                                     <button
                                         onClick={() => window.location.href = `/dashboard/players/edit/${player.id}`}
@@ -285,7 +303,7 @@ const PlayerListPage = () => {
                                         onClick={async () => {
                                             if (window.confirm('¿Estás seguro de eliminar este jugador? Esta acción no se puede deshacer.')) {
                                                 try {
-                                                const response = await fetch(`${API_BASE_URL}/players/${player.id}`, {
+                                                    const response = await fetch(`${API_BASE_URL}/players/${player.id}`, {
                                                         method: 'DELETE',
                                                         headers: {
                                                             'Authorization': `Bearer ${token}`
