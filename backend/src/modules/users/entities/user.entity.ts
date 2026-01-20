@@ -3,6 +3,8 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 export enum UserRole {
     SUPERADMIN = 'superadmin',
     AGENT = 'agent',
+    PLAYER = 'player',
+    CLUB = 'club',
 }
 
 @Entity('users')

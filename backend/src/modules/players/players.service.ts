@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Player, PlayerStatus } from './entities/player.entity';
+import { Player, PlayerStatus, RepresentationStatus } from './entities/player.entity';
 import { CreatePlayerDto } from './dto/create-player.dto';
 import { Agent } from '../agents/entities/agent.entity';
+import { AgentInvitation, InvitationStatus } from '../agents/entities/agent-invitation.entity';
 import { PlayerMedia } from './entities/player-media.entity';
 
 @Injectable()
@@ -15,6 +16,8 @@ export class PlayersService {
         private readonly agentRepository: Repository<Agent>,
         @InjectRepository(PlayerMedia)
         private readonly playerMediaRepository: Repository<PlayerMedia>,
+        @InjectRepository(AgentInvitation)
+        private readonly invitationRepository: Repository<AgentInvitation>,
     ) { }
 
     // Helper privado para obtener el agente del usuario actual
@@ -27,6 +30,10 @@ export class PlayersService {
 
         console.log(`✅ Agent found for userId ${userId}:`, agent);
         return agent;
+    }
+
+    async findByUserId(userId: string): Promise<Player | null> {
+        return this.playerRepository.findOne({ where: { userId } });
     }
 
     async create(createPlayerDto: CreatePlayerDto, userId: string): Promise<Player> {
@@ -53,6 +60,80 @@ export class PlayersService {
         console.log('   - Player ID:', savedPlayer.id);
         console.log('   - Status in DB:', savedPlayer.status);
         console.log('   - Agent ID:', savedPlayer.agentId);
+
+        return savedPlayer;
+    }
+
+    async createEmptyForUser(user: any, registrationData?: any): Promise<Player> {
+        const player = this.playerRepository.create({
+            firstName: user.firstName || 'Nuevo',
+            lastName: user.lastName || 'Jugador',
+            position: ['Sin definir'],
+            status: PlayerStatus.SIGNED,
+            user: user,
+            userId: user.id,
+            representationStatus: RepresentationStatus.FREE_AGENT // Default
+        });
+
+        // Advanced Logic for Representation
+        if (registrationData?.representationMode === 'REPRESENTED') {
+            const agentData = registrationData.agentData;
+
+            // CASO B: Agente ya registrado (Selected from search)
+            if (agentData?.id) {
+                const agent = await this.agentRepository.findOne({ where: { id: agentData.id } });
+                if (agent) {
+                    player.agent = agent;
+                    player.representationStatus = RepresentationStatus.PENDING_CONFIRMATION;
+                    console.log(`🔗 Player ${user.email} linked to existing agent ${agent.agencyName} (Pending Confirmation)`);
+                }
+            }
+            // CASO C: Agente NO registrado (Invitation)
+            else if (agentData?.email) {
+                player.representationStatus = RepresentationStatus.PENDING_INVITATION;
+
+                // Create Invitation
+                const invitation = this.invitationRepository.create({
+                    targetEmail: agentData.email,
+                    targetName: agentData.name || 'Agente',
+                    player: player, // Will be linked after player save or we save player first? 
+                    // Player needs to be saved first for ID, or cascade. 
+                    // Let's save player first below, then invitation.
+                    token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
+                    status: InvitationStatus.PENDING
+                });
+
+                // We'll save invitation after player save
+                console.log(`📧 Invitation prepared for ${agentData.email}`);
+
+                // MOCK EMAIL SERVICE
+                console.log(`
+                ---------------------------------------------------------
+                [MOCK EMAIL SERVICE] Sending Invitation
+                To: ${agentData.email}
+                Subject: Invitación de ${user.firstName || 'Jugador'}
+                Body: Hola ${agentData.name}, tu jugador te ha invitado a unirte a la plataforma.
+                Link: https://app.agentes.com/register?token=${invitation.token}
+                ---------------------------------------------------------
+                `);
+
+                // Store invitation in a variable to save later or rely on logical check
+                // Since 'player' is not saved yet, we wait.
+                // We can't attach it to 'player' entity directly unless we add OneToMany relation.
+                // We'll fetch the saved player ID.
+                (player as any).__pendingInvitation = invitation;
+            }
+        }
+
+        const savedPlayer = await this.playerRepository.save(player);
+
+        // Save pending invitation if exists
+        if ((player as any).__pendingInvitation) {
+            const invitation = (player as any).__pendingInvitation;
+            invitation.player = savedPlayer;
+            invitation.playerId = savedPlayer.id;
+            await this.invitationRepository.save(invitation);
+        }
 
         return savedPlayer;
     }
@@ -201,11 +282,16 @@ export class PlayersService {
                 foot: true,
                 avatarUrl: true,
                 videoUrl: true,
+                videoList: true,
                 additionalInfo: true,
+                careerHistory: true,
+                showCareerHistory: true,
+                tacticalPoints: true,
                 stats: true,
                 agent: {
                     id: true,
                     agencyName: true,
+                    logo: true,
                 }
             } as any,
         });
@@ -238,11 +324,16 @@ export class PlayersService {
                 foot: true,
                 avatarUrl: true,
                 videoUrl: true,
+                videoList: true,
                 additionalInfo: true,
+                careerHistory: true,
+                showCareerHistory: true,
+                tacticalPoints: true,
                 stats: true,
                 agent: {
                     id: true,
                     agencyName: true,
+                    logo: true,
                 }
             } as any,
         });
@@ -252,6 +343,45 @@ export class PlayersService {
         }
 
         return player;
+    }
+
+    async findAllMarket(): Promise<Partial<Player>[]> {
+        console.log('🌍 Finding all players for Global Market');
+
+        // DEBUG: Check all players
+        const allPlayers = await this.playerRepository.find({ select: ['id', 'firstName', 'status', 'isMarketplaceVisible'] });
+        console.log(`📊 TOTAL PLAYERS IN DB: ${allPlayers.length}`);
+        allPlayers.forEach(p => console.log(`   - ${p.firstName}: Status=${p.status}, Visible=${p.isMarketplaceVisible}`));
+
+        const players = await this.playerRepository.find({
+            where: { status: PlayerStatus.SIGNED },
+            relations: ['agent'],
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                position: true,
+                nationality: true,
+                birthDate: true,
+                height: true,
+                weight: true,
+                foot: true,
+                avatarUrl: true,
+                videoUrl: true,
+                club: true,
+                contractStatus: true,
+                marketValue: true,
+                agent: {
+                    id: true,
+                    agencyName: true,
+                    logo: true
+                }
+            } as any,
+            order: { createdAt: 'DESC' }
+        });
+
+        console.log(`✅ Found ${players.length} players for market`);
+        return players;
     }
 
     async fixAgencyData() {

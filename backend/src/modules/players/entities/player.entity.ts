@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
 import { Agent } from '../../agents/entities/agent.entity';
+import { User } from '../../users/entities/user.entity';
 import { PlayerVideo } from './player-video.entity';
 import { PlayerMedia } from './player-media.entity';
 
@@ -22,8 +23,14 @@ export class Player {
     @Column()
     lastName: string;
 
-    @Column()
-    position: string;
+    @Column({ type: 'simple-array', nullable: true })
+    position: string[]; // Changed to array for multi-select
+
+    @Column({ type: 'jsonb', nullable: true, default: [] })
+    tacticalPoints: Array<{ x: number, y: number, label?: string }>; // Custom coordinates
+
+    @Column({ type: 'jsonb', nullable: true, default: [] })
+    careerHistory: Array<{ club: string, year: string }>;
 
     @Column({ nullable: true })
     nationality: string;
@@ -44,7 +51,16 @@ export class Player {
     avatarUrl: string;
 
     @Column({ nullable: true })
-    videoUrl: string; // Deprecated, retained for compatibility
+    videoUrl: string; // Deprecated, use 'videos' instead
+
+    @Column({ type: 'jsonb', nullable: true, default: [] })
+    videoList: Array<{ url: string, title?: string }>; // New field for multiple videos
+
+    @Column({ nullable: true })
+    club: string;
+
+    @Column({ nullable: true })
+    marketValue: string;
 
     @Column({ type: 'jsonb', default: [] })
     additionalInfo: Array<{ label: string, value: string }>;
@@ -52,12 +68,19 @@ export class Player {
     @Column({ type: 'jsonb', default: {} })
     stats: any; // Flexible stats object
 
-    @ManyToOne(() => Agent)
-    @JoinColumn()
+    @ManyToOne(() => Agent, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'agentId' })
     agent: Agent;
 
-    @Column()
+    @Column({ nullable: true })
     agentId: string;
+
+    @OneToOne(() => User, { nullable: true, onDelete: 'CASCADE' })
+    @JoinColumn()
+    user: User;
+
+    @Column({ nullable: true })
+    userId: string;
 
     @CreateDateColumn()
     createdAt: Date;
@@ -65,10 +88,19 @@ export class Player {
     @UpdateDateColumn()
     updatedAt: Date;
 
+    @Column({ default: false })
+    isMarketplaceVisible: boolean;
+
+    @Column({ type: 'enum', enum: ['Libre', 'Con Contrato', 'Prestamo'], default: 'Con Contrato' })
+    contractStatus: string;
+
+    @Column({ default: true })
+    showCareerHistory: boolean;
+
     @Column({
         type: 'enum',
         enum: PlayerStatus,
-        default: PlayerStatus.SIGNED // Por defecto va al plantel, o cámbialo a lo que prefieras
+        default: PlayerStatus.SIGNED
     })
     status: PlayerStatus;
 
@@ -80,4 +112,18 @@ export class Player {
 
     @OneToMany(() => PlayerMedia, (media) => media.player, { cascade: true })
     media: PlayerMedia[];
+
+    @Column({
+        type: 'enum',
+        enum: ['FREE_AGENT', 'PENDING_CONFIRMATION', 'PENDING_INVITATION', 'REPRESENTED'],
+        default: 'FREE_AGENT'
+    })
+    representationStatus: string;
+}
+
+export enum RepresentationStatus {
+    FREE_AGENT = 'FREE_AGENT',
+    PENDING_CONFIRMATION = 'PENDING_CONFIRMATION', // Waiting for existing agent to accept
+    PENDING_INVITATION = 'PENDING_INVITATION',     // Waiting for new agent to register
+    REPRESENTED = 'REPRESENTED'
 }

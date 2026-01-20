@@ -3,6 +3,9 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+console.log(`🔌 DB Config detected: Host=${process.env.DB_HOST || 'localhost'}, URL_PRESENT=${!!process.env.DATABASE_URL}`);
+console.log(`🔒 SSL Enabled: ${!!process.env.DATABASE_URL}`);
+
 const config: DataSourceOptions = {
   type: 'postgres',
   // 1. Prioridad a la URL de Railway
@@ -24,9 +27,10 @@ const config: DataSourceOptions = {
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
 
-  // 4. SSL: Requerido por Railway/Neon
+  // 4. SSL: Requerido por Railway/Neon (solo si hay DATABASE_URL)
   extra: {
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : null,
+    keepAlive: true,
   },
 };
 

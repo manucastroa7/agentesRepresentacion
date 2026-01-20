@@ -12,9 +12,13 @@ import { PlayersModule } from './modules/players/players.module';
 import { MediaModule } from './modules/media/media.module';
 import { DomainsModule } from './modules/domains/domains.module';
 import { DemoRequestsModule } from './modules/demo-requests/demo-requests.module';
+import { FilesController } from './modules/files/files.controller';
 import { SuperadminModule } from './modules/superadmin/superadmin.module';
 import { PublicModule } from './modules/public/public.module';
 import { MailModule } from './modules/mail/mail.module';
+import { MarketModule } from './modules/market/market.module';
+import { ApplicationsModule } from './modules/applications/applications.module';
+import { ClubsModule } from './modules/clubs/clubs.module';
 
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { GlobalExceptionFilter } from './common/exceptions/global-exception.filter';
@@ -40,8 +44,11 @@ import { SeedingService } from './modules/database/seeding.service';
     SuperadminModule,
     PublicModule,
     MailModule,
+    MarketModule,
+    ApplicationsModule,
+    ClubsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, FilesController],
   providers: [
     AppService,
     SeedingService,
@@ -55,4 +62,4 @@ import { SeedingService } from './modules/database/seeding.service';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

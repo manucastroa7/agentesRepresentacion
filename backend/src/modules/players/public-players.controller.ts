@@ -5,6 +5,11 @@ import { PlayersService } from './players.service';
 export class PublicPlayersController {
     constructor(private readonly playersService: PlayersService) { }
 
+    @Get()
+    findAll() {
+        return this.playersService.findAllMarket();
+    }
+
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.playersService.findOnePublic(id);

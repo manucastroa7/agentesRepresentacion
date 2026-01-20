@@ -63,7 +63,7 @@ export class Agent {
     })
     status: AgentStatus;
 
-    @OneToOne(() => User)
+    @OneToOne(() => User, { onDelete: 'CASCADE' })
     @JoinColumn()
     user: User;
 

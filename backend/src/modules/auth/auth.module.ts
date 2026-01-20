@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersModule } from '../users/users.module';
+import { PlayersModule } from '../players/players.module';
+import { AgentsModule } from '../agents/agents.module';
+import { MailModule } from '../mail/mail.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -11,6 +14,9 @@ import { AuthController } from './auth.controller';
 @Module({
     imports: [
         UsersModule,
+        PlayersModule,
+        AgentsModule,
+        MailModule,
         PassportModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],

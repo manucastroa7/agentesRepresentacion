@@ -7,9 +7,11 @@ import { PublicAgentsController } from './public-agents.controller';
 import { Player } from '../players/entities/player.entity';
 import { PlayersModule } from '../players/players.module';
 
+import { AgentInvitation } from './entities/agent-invitation.entity';
+
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Agent, Player]),
+        TypeOrmModule.forFeature([Agent, Player, AgentInvitation]),
         forwardRef(() => PlayersModule),
     ],
     controllers: [AgentsController, PublicAgentsController],

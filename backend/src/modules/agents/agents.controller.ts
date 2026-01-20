@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Patch, Param } from '@nestjs/common';
 import { AgentsService } from './agents.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -42,6 +42,27 @@ export class AgentsController {
     async getMyAgency(@Request() req) {
         const userId = req.user.id || req.user.userId;
         return this.agentsService.findByUserId(userId);
+    }
+
+    @Get('my-players')
+    @Roles(UserRole.AGENT)
+    async getMyPlayers(@Request() req) {
+        const userId = req.user.id || req.user.userId;
+        return this.agentsService.findMyPlayers(userId);
+    }
+
+    @Post('players')
+    @Roles(UserRole.AGENT)
+    async createPlayer(@Request() req, @Body() data: any) {
+        const userId = req.user.id || req.user.userId;
+        return this.agentsService.createPlayer(userId, data);
+    }
+
+    @Patch('players/:id/visibility')
+    @Roles(UserRole.AGENT)
+    async togglePlayerVisibility(@Request() req, @Param('id') playerId: string) {
+        const userId = req.user.id || req.user.userId;
+        return this.agentsService.togglePlayerVisibility(userId, playerId);
     }
 
     @Patch('me')

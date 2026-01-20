@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsNumber, IsArray, IsDateString, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsNumber, IsArray, IsDateString, ValidateNested, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PlayerStatus } from '../entities/player.entity';
 
@@ -11,9 +11,22 @@ export class CreatePlayerDto {
     @IsNotEmpty()
     lastName: string;
 
-    @IsString()
+    @IsArray()
+    @IsString({ each: true })
     @IsNotEmpty()
-    position: string;
+    position: string[];
+
+    @IsArray()
+    @IsOptional()
+    careerHistory?: Array<{ club: string, year: string }>;
+
+    @IsBoolean()
+    @IsOptional()
+    showCareerHistory?: boolean;
+
+    @IsArray()
+    @IsOptional()
+    tacticalPoints?: Array<{ x: number, y: number, label?: string }>;
 
     @IsString()
     @IsOptional()
@@ -46,6 +59,10 @@ export class CreatePlayerDto {
     @IsString()
     @IsOptional()
     videoUrl?: string;
+
+    @IsArray()
+    @IsOptional()
+    videoList?: { url: string; title?: string }[];
 
     @IsArray()
     @IsOptional()

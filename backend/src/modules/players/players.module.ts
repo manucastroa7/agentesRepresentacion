@@ -12,9 +12,11 @@ import { PlayersService } from './players.service';
 import { AgentsModule } from '../agents/agents.module';
 import { MediaModule } from '../media/media.module';
 
+import { AgentInvitation } from '../agents/entities/agent-invitation.entity';
+
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Player, PlayerVideo, PlayerMedia, Agent]),
+        TypeOrmModule.forFeature([Player, PlayerVideo, PlayerMedia, Agent, AgentInvitation]),
         forwardRef(() => AgentsModule),
         MediaModule,
     ],

@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Agent, AgentPlan, AgentStatus } from './entities/agent.entity';
 import { User, UserRole } from '../users/entities/user.entity';
+import { Player, PlayerStatus, RepresentationStatus } from '../players/entities/player.entity';
+import { AgentInvitation, InvitationStatus } from './entities/agent-invitation.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -10,6 +12,10 @@ export class AgentsService {
     constructor(
         @InjectRepository(Agent)
         private readonly agentsRepository: Repository<Agent>,
+        @InjectRepository(Player)
+        private readonly playersRepository: Repository<Player>,
+        @InjectRepository(AgentInvitation)
+        private readonly invitationRepository: Repository<AgentInvitation>,
         private readonly dataSource: DataSource,
     ) { }
 
@@ -115,5 +121,78 @@ export class AgentsService {
                 await manager.delete(User, agent.userId);
             }
         });
+    }
+
+    // --- Player Management ---
+
+    async findMyPlayers(userId: string): Promise<Player[]> {
+        const agent = await this.findByUserId(userId);
+        return this.playersRepository.find({
+            where: { agent: { id: agent.id } },
+            order: { createdAt: 'DESC' }
+        });
+    }
+
+    async createPlayer(userId: string, data: Partial<Player>): Promise<Player> {
+        const agent = await this.findByUserId(userId);
+
+        const player = this.playersRepository.create({
+            ...data,
+            agent: agent,
+            agentId: agent.id,
+            status: PlayerStatus.SIGNED, // Default to signed for manual creation
+            isMarketplaceVisible: false, // Default hidden
+        });
+
+        return this.playersRepository.save(player);
+    }
+
+    async togglePlayerVisibility(userId: string, playerId: string): Promise<Player> {
+        const agent = await this.findByUserId(userId);
+        const player = await this.playersRepository.findOne({ where: { id: playerId } });
+
+        if (!player) {
+            throw new NotFoundException('Player not found');
+        }
+
+        if (player.agentId !== agent.id) {
+            throw new ForbiddenException('You do not own this player profile');
+        }
+
+        player.isMarketplaceVisible = !player.isMarketplaceVisible;
+        return this.playersRepository.save(player);
+    }
+
+    async checkInvitations(email: string, agent: Agent) {
+        console.log(`Checking invitations for ${email}...`);
+        const invitations = await this.invitationRepository.find({
+            where: {
+                targetEmail: email,
+                status: InvitationStatus.PENDING
+            },
+            relations: ['player']
+        });
+
+        if (invitations.length > 0) {
+            console.log(`🎉 Found ${invitations.length} pending invitations for ${email}`);
+
+            for (const invite of invitations) {
+                // 1. Accept Invitation
+                invite.status = InvitationStatus.ACCEPTED;
+                await this.invitationRepository.save(invite);
+
+                // 2. Link Player
+                const player = invite.player;
+                if (player) {
+                    player.agent = agent;
+                    player.representationStatus = RepresentationStatus.PENDING_CONFIRMATION;
+
+                    await this.playersRepository.save(player);
+                    console.log(`🔗 Linked player ${player.firstName} ${player.lastName} to agent ${agent.agencyName}`);
+                }
+            }
+        } else {
+            console.log('No pending invitations found.');
+        }
     }
 }

@@ -9,6 +9,19 @@ export class PublicAgentsController {
         private readonly playersService: PlayersService,
     ) { }
 
+    @Get()
+    async findAll() {
+        const agents = await this.agentsService.findAll();
+        return agents.map(agent => ({
+            id: agent.id,
+            agencyName: agent.agencyName,
+            logo: agent.logo,
+            slug: agent.slug,
+            location: agent.location,
+            bio: agent.bio,
+        }));
+    }
+
     @Get(':slug')
     async getAgentPortfolio(@Param('slug') slug: string) {
         // Find agent by slug

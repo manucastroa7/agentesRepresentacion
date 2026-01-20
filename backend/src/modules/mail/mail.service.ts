@@ -1,65 +1,73 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
 
-  constructor(private configService: ConfigService) {
+  constructor() {
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('MAIL_HOST'),
-      port: this.configService.get<number>('MAIL_PORT'),
+      host: process.env.MAIL_HOST || 'smtp.gmail.com',
+      port: Number(process.env.MAIL_PORT) || 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: this.configService.get<string>('MAIL_USER'),
-        pass: this.configService.get<string>('MAIL_PASS'),
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
       },
     });
   }
 
-  async sendUserConfirmation(user: any, token: string) {
-    const url = `example.com/auth/confirm?token=${token}`;
+  async sendPasswordResetEmail(to: string, token: string) {
+    // Construct the reset link (adjust URL as needed for frontend)
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
 
-    await this.transporter.sendMail({
-      to: user.email,
-      from: '"Support Team" <support@example.com>', // override with env var if needed
-      subject: 'Welcome to Nice App! Confirm your Email',
+    const mailOptions = {
+      from: `"Soporte AgentSport" <${process.env.MAIL_USER}>`,
+      to,
+      subject: 'Recuperación de Contraseña',
       html: `
-        <p>Hey ${user.name},</p>
-        <p>Please click below to confirm your email</p>
-        <p>
-            <a href="${url}">Confirm</a>
-        </p>
-        <p>If you did not request this email you can safely ignore it.</p>
-      `,
-    });
-  }
+                <div style="font-family: Arial, sans-serif; color: #333;">
+                    <h2>Recuperación de Contraseña</h2>
+                    <p>Hola,</p>
+                    <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente botón para continuar:</p>
+                    <a href="${resetLink}" style="display: inline-block; background-color: #39FF14; color: #000; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Establecer Nueva Contraseña</a>
+                    <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+                    <p>El enlace es válido por 30 minutos.</p>
+                </div>
+            `,
+    };
 
-  async sendDemoRequestConfirmation(email: string) {
     try {
-      await this.transporter.sendMail({
-        to: email,
-        from: '"AgentPro Team" <no-reply@agentpro.com>',
-        subject: 'Solicitud de Demo Recibida - AgentPro',
-        html: `
-          <div style="font-family: Arial, sans-serif; color: #333;">
-            <h2>¡Gracias por tu interés en AgentPro!</h2>
-            <p>Hemos recibido tu solicitud de demo.</p>
-            <p>Nuestro equipo revisará tu información y se pondrá en contacto contigo a la brevedad para coordinar una demostración personalizada.</p>
-            <br>
-            <p>Atentamente,</p>
-            <p><strong>El equipo de AgentPro</strong></p>
-          </div>
-        `,
-      });
-      console.log(`Demo confirmation email sent to ${email}`);
+      await this.transporter.sendMail(mailOptions);
+      console.log(`Email sent to ${to}`);
     } catch (error) {
-      console.error(
-        `Error sending demo confirmation email to ${email}:`,
-        error,
-      );
-      // Don't throw error to avoid blocking the user response, just log it
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  }
+  async sendDemoRequestConfirmation(to: string) {
+    const mailOptions = {
+      from: `"Soporte AgentSport" <${process.env.MAIL_USER}>`,
+      to,
+      subject: 'Solicitud de Demo Recibida - AgentSport',
+      html: `
+                <div style="font-family: Arial, sans-serif; color: #333;">
+                    <h2>¡Gracias por tu interés en AgentSport!</h2>
+                    <p>Hola,</p>
+                    <p>Hemos recibido tu solicitud para una demo. Nuestro equipo revisará tu información y se pondrá en contacto contigo a la brevedad para coordinar una reunión.</p>
+                    <p>Si tienes alguna consulta urgente, no dudes en responder a este correo.</p>
+                    <br>
+                    <p>Atentamente,</p>
+                    <p><strong>El equipo de AgentSport</strong></p>
+                </div>
+            `,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`Demo confirmation email sent to ${to}`);
+    } catch (error) {
+      console.error('Error sending demo confirmation email:', error);
     }
   }
 }
