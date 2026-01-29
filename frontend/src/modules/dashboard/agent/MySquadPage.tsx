@@ -85,7 +85,7 @@ const MySquadPage = () => {
         try {
             await api.patch(`/agents/players/${id}/visibility`);
             toast({
-                title: currentStatus ? "Oculto del Mercado" : "Visible en Mercado",
+                title: currentStatus ? "Oculto del Portfolio" : "Visible en Portfolio",
                 description: `El jugador ahora es ${!currentStatus ? 'visible' : 'privado'}.`,
                 className: "bg-slate-900 text-white border-slate-700"
             });
@@ -208,7 +208,7 @@ const MySquadPage = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-3xl font-display font-bold text-white">Mi Plantilla</h2>
-                    <p className="text-slate-400">Gestiona tu cartera de talentos y su visibilidad en el mercado.</p>
+                    <p className="text-slate-400">Gestiona tu cartera de talentos y su visibilidad en tu portfolio.</p>
                 </div>
                 <div className="flex gap-3">
                     <div className="bg-slate-900 p-1 rounded-lg border border-slate-800 flex gap-1 mr-2">
@@ -265,7 +265,7 @@ const MySquadPage = () => {
                                     <th className="px-6 py-4">Edad</th>
                                     <th className="px-6 py-4">Nacionalidad</th>
                                     <th className="px-6 py-4">Estado</th>
-                                    <th className="px-6 py-4 text-center">Mercado</th>
+                                    <th className="px-6 py-4 text-center">Portfolio</th>
                                     <th className="px-6 py-4 text-right">Acciones</th>
                                 </tr>
                             </thead>

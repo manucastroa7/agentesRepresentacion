@@ -4,9 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, Reorder } from 'framer-motion';
 import * as Tabs from '@radix-ui/react-tabs';
 import * as Accordion from '@radix-ui/react-accordion';
-import { User, Activity, ImageIcon, Save, ChevronDown, Plus, Trash2, Upload, Link as LinkIcon, Lock, GripVertical } from 'lucide-react';
+import { User, Activity, ImageIcon, Save, ChevronDown, Plus, Trash2, Upload, Lock, GripVertical } from 'lucide-react';
 import MiniPitch from '@/components/soccer/MiniPitch';
-import type { Position } from '@/components/soccer/MiniPitch';
 import { useAuthStore } from '@/context/authStore';
 import InputGroup from './components/InputGroup';
 import { API_BASE_URL } from '@/config/api';
@@ -26,6 +25,7 @@ interface FormData {
     birthDate: string;
     avatarUrl: string;
     videoUrl: string;
+    videoList: Array<{ url: string; title: string }>;
     status: string;
     club: string;
     marketValue: string;
@@ -37,23 +37,31 @@ interface FormData {
         shooting: number;
         passing: number;
     };
-    additionalInfo: Array<{ label: string; value: string }>;
+    additionalInfo: Array<{ label: string; value: string; isPublic: boolean }>;
     privateDetails: {
         contract: {
-            expiryDate: string;
-            releaseClause: string;
-            annualSalary: string;
-            coRepresented: string;
+            expiryDate: { value: string; isPublic: boolean };
+            releaseClause: { value: string; isPublic: boolean };
+            annualSalary: { value: string; isPublic: boolean };
+            coRepresented: { value: string; isPublic: boolean };
         };
         health: {
-            injuryHistory: string;
-            nutrition: string;
+            injuryHistory: { value: string; isPublic: boolean };
+            nutrition: { value: string; isPublic: boolean };
         };
         family: {
-            familyNotes: string;
+            familyNotes: { value: string; isPublic: boolean };
         };
-        observations: string;
+        observations: {
+            text: string;
+            isPublic: boolean;
+        };
     };
+    passport: string;
+    hasPassport: boolean;
+    availability: string;
+    hasClub: boolean;
+    hasMarketValue: boolean;
 }
 
 const CreatePlayerForm = () => {
@@ -89,10 +97,20 @@ const CreatePlayerForm = () => {
             },
             additionalInfo: [],
             privateDetails: {
-                contract: { expiryDate: '', releaseClause: '', annualSalary: '', coRepresented: '' },
-                health: { injuryHistory: '', nutrition: '' },
-                family: { familyNotes: '' },
-                observations: ''
+                contract: {
+                    expiryDate: { value: '', isPublic: false },
+                    releaseClause: { value: '', isPublic: false },
+                    annualSalary: { value: '', isPublic: false },
+                    coRepresented: { value: '', isPublic: false }
+                },
+                health: {
+                    injuryHistory: { value: '', isPublic: false },
+                    nutrition: { value: '', isPublic: false }
+                },
+                family: {
+                    familyNotes: { value: '', isPublic: false }
+                },
+                observations: { text: '', isPublic: false }
             }
         }
     });
@@ -126,11 +144,54 @@ const CreatePlayerForm = () => {
                                 shooting: 50,
                                 passing: 50
                             },
-                            additionalInfo: data.additionalInfo || [],
+                            additionalInfo: data.additionalInfo?.map((item: any) => ({
+                                ...item,
+                                isPublic: item.isPublic !== false // Default to true if undefined
+                            })) || [],
                             careerHistory: data.careerHistory || [], // Ensure array logic
                             videoList: data.videoList && data.videoList.length > 0
                                 ? data.videoList
-                                : data.videoUrl ? [{ url: data.videoUrl, title: 'Highlight Principal' }] : []
+                                : data.videoUrl ? [{ url: data.videoUrl, title: 'Highlight Principal' }] : [],
+                            passport: data.passport || '',
+                            hasPassport: !!data.passport,
+                            availability: data.availability || 'DISPONIBLE',
+                            hasClub: !!data.club,
+                            hasMarketValue: !!data.marketValue,
+                            privateDetails: {
+                                contract: {
+                                    expiryDate: typeof data.privateDetails?.contract?.expiryDate === 'object'
+                                        ? data.privateDetails.contract.expiryDate
+                                        : { value: data.privateDetails?.contract?.expiryDate || '', isPublic: false },
+                                    releaseClause: typeof data.privateDetails?.contract?.releaseClause === 'object'
+                                        ? data.privateDetails.contract.releaseClause
+                                        : { value: data.privateDetails?.contract?.releaseClause || '', isPublic: false },
+                                    annualSalary: typeof data.privateDetails?.contract?.annualSalary === 'object'
+                                        ? data.privateDetails.contract.annualSalary
+                                        : { value: data.privateDetails?.contract?.annualSalary || '', isPublic: false },
+                                    coRepresented: typeof data.privateDetails?.contract?.coRepresented === 'object'
+                                        ? data.privateDetails.contract.coRepresented
+                                        : { value: data.privateDetails?.contract?.coRepresented || '', isPublic: false }
+                                },
+                                health: {
+                                    injuryHistory: typeof data.privateDetails?.health?.injuryHistory === 'object'
+                                        ? data.privateDetails.health.injuryHistory
+                                        : { value: data.privateDetails?.health?.injuryHistory || '', isPublic: false },
+                                    nutrition: typeof data.privateDetails?.health?.nutrition === 'object'
+                                        ? data.privateDetails.health.nutrition
+                                        : { value: data.privateDetails?.health?.nutrition || '', isPublic: false }
+                                },
+                                family: {
+                                    familyNotes: typeof data.privateDetails?.family?.familyNotes === 'object'
+                                        ? data.privateDetails.family.familyNotes
+                                        : { value: data.privateDetails?.family?.familyNotes || '', isPublic: false }
+                                },
+                                observations: typeof data.privateDetails?.observations === 'string'
+                                    ? { text: data.privateDetails.observations, isPublic: false }
+                                    : {
+                                        text: data.privateDetails?.observations?.text || '',
+                                        isPublic: data.privateDetails?.observations?.isPublic || false
+                                    }
+                            }
                         };
                         console.log("📥 Player Data Loaded:", formattedData);
                         reset(formattedData);
@@ -247,15 +308,17 @@ const CreatePlayerForm = () => {
             media: [],
             stats: data.stats,
             status: data.status,
-            club: data.club,
-            marketValue: data.marketValue,
             videoUrl: data.videoUrl,
             videoList: data.videoList, // Added videoList to payload
             careerHistory: data.careerHistory, // ✅ Fixed: Added missing field
             additionalInfo: data.additionalInfo,
             showCareerHistory: data.showCareerHistory,
             tacticalPoints: data.tacticalPoints,
-            privateDetails: data.privateDetails
+            privateDetails: data.privateDetails,
+            passport: data.hasPassport ? data.passport : null,
+            availability: data.availability,
+            club: data.hasClub ? data.club : null,
+            marketValue: data.hasMarketValue ? data.marketValue : null
         };
 
         if (!token) {
@@ -350,7 +413,7 @@ const CreatePlayerForm = () => {
                             { id: 'personal', label: 'Datos Personales', icon: User },
                             // { id: 'technical', label: 'Perfil Técnico', icon: Activity },
                             { id: 'multimedia', label: 'Multimedia', icon: ImageIcon },
-                            { id: 'private', label: 'Gestión Privada 🔒', icon: Lock },
+                            { id: 'private', label: 'Información Adicional', icon: Lock },
                         ].map((tab) => (
                             <Tabs.Trigger
                                 key={tab.id}
@@ -424,21 +487,50 @@ const CreatePlayerForm = () => {
                                         </InputGroup>
                                     </div>
 
+
+
                                     <div className="grid grid-cols-2 gap-4">
-                                        <InputGroup label="Club Actual">
-                                            <input
-                                                {...register('club')}
-                                                className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#39FF14] transition-all placeholder:text-slate-600"
-                                                placeholder="Ej: Boca Juniors"
-                                            />
-                                        </InputGroup>
-                                        <InputGroup label="Valor de Mercado">
-                                            <input
-                                                {...register('marketValue')}
-                                                className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#39FF14] transition-all placeholder:text-slate-600"
-                                                placeholder="Ej: $ 1.5M"
-                                            />
-                                        </InputGroup>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-slate-400 text-sm font-bold uppercase tracking-wider">Club Actual</label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('hasClub')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-500">¿Tiene?</span>
+                                                </label>
+                                            </div>
+                                            {watch('hasClub') && (
+                                                <input
+                                                    {...register('club')}
+                                                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#39FF14] transition-all placeholder:text-slate-600"
+                                                    placeholder="Ej: Boca Juniors"
+                                                />
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-slate-400 text-sm font-bold uppercase tracking-wider">Valor de Mercado</label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('hasMarketValue')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-500">¿Visible?</span>
+                                                </label>
+                                            </div>
+                                            {watch('hasMarketValue') && (
+                                                <input
+                                                    {...register('marketValue')}
+                                                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#39FF14] transition-all placeholder:text-slate-600"
+                                                    placeholder="Ej: $ 1.5M"
+                                                />
+                                            )}
+                                        </div>
                                     </div>
 
                                     <InputGroup label="Posiciones de Juego">
@@ -567,20 +659,41 @@ const CreatePlayerForm = () => {
                                         </InputGroup>
                                     </div>
 
-                                    <InputGroup label="Estado / Status">
-                                        <div className="relative">
-                                            <select
-                                                {...register('status')}
-                                                className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-[#39FF14] transition-all"
-                                            >
-                                                <option value="signed">✅ Plantel (Firmado)</option>
-                                                <option value="watchlist">🔭 Scouting: Observando</option>
-                                                <option value="contacted">💬 Scouting: Contactado</option>
-                                                <option value="priority">⭐ Scouting: Prioridad</option>
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-slate-400 text-sm font-bold uppercase tracking-wider">Pasaporte</label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('hasPassport')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-500">¿Tiene?</span>
+                                                </label>
+                                            </div>
+                                            {watch('hasPassport') && (
+                                                <input
+                                                    {...register('passport')}
+                                                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#39FF14] transition-all placeholder:text-slate-600"
+                                                    placeholder="Ej: Italiano / Comunitario"
+                                                />
+                                            )}
                                         </div>
-                                    </InputGroup>
+
+                                        <InputGroup label="Estado / Disponibilidad">
+                                            <div className="relative">
+                                                <select
+                                                    {...register('availability')}
+                                                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-[#39FF14] transition-all"
+                                                >
+                                                    <option value="DISPONIBLE">🟢 DISPONIBLE</option>
+                                                    <option value="NO DISPONIBLE">🔴 NO DISPONIBLE</option>
+                                                </select>
+                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
+                                            </div>
+                                        </InputGroup>
+                                    </div>
 
                                     {/* Career History Section */}
                                     <div className="pt-6 border-t border-white/10">
@@ -665,46 +778,7 @@ const CreatePlayerForm = () => {
                                         </Reorder.Group>
                                     </div>
 
-                                    {/* Custom Fields Section */}
-                                    <div className="pt-6 border-t border-white/10">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <label className="text-slate-400 text-sm font-bold uppercase tracking-wider">Información Adicional</label>
-                                            <button
-                                                type="button"
-                                                onClick={() => append({ label: '', value: '' })}
-                                                className="text-[#39FF14] text-xs font-bold uppercase tracking-wider hover:underline flex items-center gap-1"
-                                            >
-                                                <Plus size={14} /> Agregar Dato
-                                            </button>
-                                        </div>
 
-                                        <div className="space-y-3">
-                                            {fields.map((field, index) => (
-                                                <div key={field.id} className="flex gap-2">
-                                                    <input
-                                                        {...register(`additionalInfo.${index}.label` as const, { required: true })}
-                                                        placeholder="Ej: Pasaporte"
-                                                        className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#39FF14] outline-none"
-                                                    />
-                                                    <input
-                                                        {...register(`additionalInfo.${index}.value` as const, { required: true })}
-                                                        placeholder="Ej: Italiano"
-                                                        className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#39FF14] outline-none"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => remove(index)}
-                                                        className="p-2 text-slate-500 hover:text-red-500 transition-colors"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            {fields.length === 0 && (
-                                                <p className="text-slate-600 text-xs italic">No hay datos adicionales. Agrega campos personalizados como 'Vencimiento de Contrato', 'Pasaporte', etc.</p>
-                                            )}
-                                        </div>
-                                    </div>
                                 </div>
                             </motion.div>
                         </Tabs.Content>
@@ -927,14 +1001,60 @@ const CreatePlayerForm = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="space-y-8"
                             >
-                                {/* Alert Banner */}
-                                <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 flex gap-3 items-start">
-                                    <Lock className="text-orange-400 mt-0.5" size={20} />
-                                    <div>
-                                        <h5 className="text-orange-400 font-bold text-sm mb-1">Información Confidencial</h5>
-                                        <p className="text-slate-400 text-xs leading-relaxed">
-                                            Los datos de esta sección son <strong>privados</strong> y <strong>nunca</strong> se mostrarán en el perfil público del jugador.
-                                        </p>
+                                {/* Custom Additional Info Fields (Moved from Personal) */}
+                                <p className="text-slate-400 text-sm mb-4">
+                                    Agrega campos personalizados a la ficha del jugador (ej: Pasaporte, Apodo, Sponsorship) y decide cual mostrar públicamente.
+                                </p>
+                                <div className="bg-slate-900/50 border border-white/10 rounded-2xl p-6 mb-8">
+                                    <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-[#39FF14] rounded-full"></span>
+                                            Campos Personalizados (Pública/Privada)
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => append({ label: '', value: '', isPublic: true })}
+                                            className="text-[#39FF14] text-xs font-bold uppercase tracking-wider hover:underline flex items-center gap-1"
+                                        >
+                                            <Plus size={14} /> Agregar Dato
+                                        </button>
+                                    </h3>
+
+                                    <div className="space-y-3">
+                                        {fields.map((field, index) => (
+                                            <div key={field.id} className="flex gap-2">
+                                                <input
+                                                    {...register(`additionalInfo.${index}.label` as const, { required: true })}
+                                                    placeholder="Ej: Vencimiento Pasaporte"
+                                                    className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#39FF14] outline-none"
+                                                />
+                                                <input
+                                                    {...register(`additionalInfo.${index}.value` as const, { required: true })}
+                                                    placeholder="Ej: 12/2026"
+                                                    className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#39FF14] outline-none"
+                                                />
+                                                <label className="flex items-center gap-2 bg-slate-800 border border-white/20 rounded-lg px-3 cursor-pointer hover:bg-slate-700 transition-colors py-2 shrink-0">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register(`additionalInfo.${index}.isPublic` as const)}
+                                                        className="w-5 h-5 cursor-pointer accent-[#39FF14]"
+                                                    />
+                                                    <span className="text-xs text-white font-bold uppercase select-none">Público</span>
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => remove(index)}
+                                                    className="p-2 text-slate-500 hover:text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {fields.length === 0 && (
+                                            <p className="text-slate-500 text-sm italic">
+                                                Agrega datos personalizados que desees mostrar en el perfil público (opcional).
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -942,49 +1062,89 @@ const CreatePlayerForm = () => {
                                 <div className="bg-red-950/5 border border-red-500/20 rounded-2xl p-6">
                                     <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
                                         <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                                        Contratos
+                                        Contratos (Privado)
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <InputGroup label="Vencimiento de Contrato">
-                                            <input
-                                                type="date"
-                                                {...register('privateDetails.contract.expiryDate')}
-                                                className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all [color-scheme:dark]"
-                                            />
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="date"
+                                                    {...register('privateDetails.contract.expiryDate.value')}
+                                                    className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all [color-scheme:dark]"
+                                                />
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('privateDetails.contract.expiryDate.isPublic')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-400">Hacer público</span>
+                                                </label>
+                                            </div>
                                         </InputGroup>
                                         <InputGroup label="Cláusula de Salida (USD)">
-                                            <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                    <span className="text-slate-500 font-bold">$</span>
+                                            <div className="space-y-2">
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                        <span className="text-slate-500 font-bold">$</span>
+                                                    </div>
+                                                    <input
+                                                        type="number"
+                                                        {...register('privateDetails.contract.releaseClause.value')}
+                                                        className="w-full bg-slate-950 border border-red-500/20 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all"
+                                                        placeholder="5000000"
+                                                    />
                                                 </div>
-                                                <input
-                                                    type="number"
-                                                    {...register('privateDetails.contract.releaseClause')}
-                                                    className="w-full bg-slate-950 border border-red-500/20 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all"
-                                                    placeholder="5000000"
-                                                />
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('privateDetails.contract.releaseClause.isPublic')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-400">Hacer público</span>
+                                                </label>
                                             </div>
                                         </InputGroup>
                                         <InputGroup label="Salario Anual (USD)">
-                                            <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                    <span className="text-slate-500 font-bold">$</span>
+                                            <div className="space-y-2">
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                        <span className="text-slate-500 font-bold">$</span>
+                                                    </div>
+                                                    <input
+                                                        type="number"
+                                                        {...register('privateDetails.contract.annualSalary.value')}
+                                                        className="w-full bg-slate-950 border border-red-500/20 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all"
+                                                        placeholder="500000"
+                                                    />
                                                 </div>
-                                                <input
-                                                    type="number"
-                                                    {...register('privateDetails.contract.annualSalary')}
-                                                    className="w-full bg-slate-950 border border-red-500/20 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all"
-                                                    placeholder="500000"
-                                                />
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('privateDetails.contract.annualSalary.isPublic')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-400">Hacer público</span>
+                                                </label>
                                             </div>
                                         </InputGroup>
                                         <InputGroup label="Empresa Co-Representante">
-                                            <input
-                                                type="text"
-                                                {...register('privateDetails.contract.coRepresented')}
-                                                className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all"
-                                                placeholder="Ej: XYZ Management"
-                                            />
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="text"
+                                                    {...register('privateDetails.contract.coRepresented.value')}
+                                                    className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all"
+                                                    placeholder="Ej: XYZ Management"
+                                                />
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('privateDetails.contract.coRepresented.isPublic')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-400">Hacer público</span>
+                                                </label>
+                                            </div>
                                         </InputGroup>
                                     </div>
                                 </div>
@@ -997,20 +1157,40 @@ const CreatePlayerForm = () => {
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <InputGroup label="Historial de Lesiones">
-                                            <textarea
-                                                {...register('privateDetails.health.injuryHistory')}
-                                                rows={4}
-                                                className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
-                                                placeholder="Ej: Lesión de menisco en 2022, recuperación total..."
-                                            />
+                                            <div className="space-y-2">
+                                                <textarea
+                                                    {...register('privateDetails.health.injuryHistory.value')}
+                                                    rows={4}
+                                                    className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
+                                                    placeholder="Ej: Lesión de menisco en 2022, recuperación total..."
+                                                />
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('privateDetails.health.injuryHistory.isPublic')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-400">Hacer público</span>
+                                                </label>
+                                            </div>
                                         </InputGroup>
                                         <InputGroup label="Nutrición / Dietas">
-                                            <textarea
-                                                {...register('privateDetails.health.nutrition')}
-                                                rows={4}
-                                                className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
-                                                placeholder="Ej: Dieta alta en proteínas, intolerancia a..."
-                                            />
+                                            <div className="space-y-2">
+                                                <textarea
+                                                    {...register('privateDetails.health.nutrition.value')}
+                                                    rows={4}
+                                                    className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
+                                                    placeholder="Ej: Dieta alta en proteínas, intolerancia a..."
+                                                />
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        {...register('privateDetails.health.nutrition.isPublic')}
+                                                        className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                    />
+                                                    <span className="text-xs text-slate-400">Hacer público</span>
+                                                </label>
+                                            </div>
                                         </InputGroup>
                                     </div>
                                 </div>
@@ -1022,23 +1202,43 @@ const CreatePlayerForm = () => {
                                         Entorno & Familia
                                     </h3>
                                     <InputGroup label="Situación Familiar / Entorno">
-                                        <textarea
-                                            {...register('privateDetails.family.familyNotes')}
-                                            rows={4}
-                                            className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
-                                            placeholder="Ej: Padres presentes, hermano menor juega fútbol, tiene pasaporte italiano..."
-                                        />
+                                        <div className="space-y-2">
+                                            <textarea
+                                                {...register('privateDetails.family.familyNotes.value')}
+                                                rows={4}
+                                                className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
+                                                placeholder="Ej: Padres presentes, hermano menor juega fútbol, tiene pasaporte italiano..."
+                                            />
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    {...register('privateDetails.family.familyNotes.isPublic')}
+                                                    className="w-4 h-4 rounded border-slate-600 text-[#39FF14] focus:ring-[#39FF14] bg-slate-900"
+                                                />
+                                                <span className="text-xs text-slate-400">Hacer público</span>
+                                            </label>
+                                        </div>
                                     </InputGroup>
                                 </div>
 
                                 {/* General Observations Section */}
                                 <div className="bg-red-950/5 border border-red-500/20 rounded-2xl p-6">
-                                    <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
-                                        <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                                        Observaciones Generales
+                                    <h3 className="text-xl font-display font-bold text-white mb-6 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                                            Observaciones Generales
+                                        </div>
+                                        <label className="flex items-center gap-2 bg-slate-800 border border-white/20 rounded-lg px-3 cursor-pointer hover:bg-slate-700 transition-colors py-2">
+                                            <input
+                                                type="checkbox"
+                                                {...register('privateDetails.observations.isPublic')}
+                                                className="w-5 h-5 cursor-pointer accent-[#39FF14]"
+                                            />
+                                            <span className="text-xs text-white font-bold uppercase select-none">Hacer Público</span>
+                                        </label>
                                     </h3>
                                     <textarea
-                                        {...register('privateDetails.observations')}
+                                        {...register('privateDetails.observations.text')}
                                         rows={6}
                                         className="w-full bg-slate-950 border border-red-500/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-all resize-none placeholder:text-slate-600"
                                         placeholder="Notas adicionales, recordatorios, aspectos importantes a considerar..."

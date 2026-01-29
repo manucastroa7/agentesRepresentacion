@@ -199,6 +199,7 @@ const PublicPlayerProfile = () => {
                         <InfoItem label="Altura" value={player.height ? `${player.height} cm` : '-'} />
                         <InfoItem label="Peso" value={player.weight ? `${player.weight} kg` : '-'} />
                         <InfoItem label="Pie Hábil" value={player.foot === 'right' ? 'Diestro' : player.foot === 'left' ? 'Zurdo' : 'Ambidextro'} />
+                        {player.passport && <InfoItem label="Pasaporte" value={player.passport} />}
                         <InfoItem label="Club Actual" value={player.club || 'Agente Libre'} />
                         <InfoItem label="Valor Mercado" value={<span className="text-[#39FF14] print:text-black">{player.marketValue || 'Consultar'}</span>} />
                     </div>
@@ -206,15 +207,17 @@ const PublicPlayerProfile = () => {
                     {/* Additional Info Row if exists */}
                     {player.additionalInfo && player.additionalInfo.length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-8 pt-8 border-t border-white/5 border-dashed print:border-gray-300">
-                            {player.additionalInfo.map((info: any, i: number) => (
-                                <InfoItem key={i} label={info.label} value={info.value} />
-                            ))}
+                            {player.additionalInfo
+                                .filter((info: any) => info.isPublic !== false)
+                                .map((info: any, i: number) => (
+                                    <InfoItem key={i} label={info.label} value={info.value} />
+                                ))}
                         </div>
                     )}
                 </motion.div>
 
                 {/* 2. SPLIT SECTION: TACTICAL (Left) | TRAJECTORY (Right) */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className={`grid grid-cols-1 ${player.careerHistory && player.careerHistory.length > 0 ? 'lg:grid-cols-2' : ''} gap-8`}>
 
                     {/* LEFT: Tactical Position */}
                     <motion.div
@@ -243,45 +246,125 @@ const PublicPlayerProfile = () => {
                     </motion.div>
 
                     {/* RIGHT: Trajectory */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        className="bg-[#0A0A0A] border border-white/10 rounded-[2rem] p-8 print:bg-white print:border-black print-break-inside"
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <div>
-                                <h3 className="text-2xl font-display font-bold text-white print:text-black">Trayectoria</h3>
-                                <p className="text-slate-400 text-sm print:text-gray-600">Historial de clubes y temporadas.</p>
+                    {player.careerHistory && player.careerHistory.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            className="bg-[#0A0A0A] border border-white/10 rounded-[2rem] p-8 print:bg-white print:border-black print-break-inside"
+                        >
+                            <div className="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 className="text-2xl font-display font-bold text-white print:text-black">Trayectoria</h3>
+                                    <p className="text-slate-400 text-sm print:text-gray-600">Historial de clubes y temporadas.</p>
+                                </div>
+                                <Trophy className="text-[#39FF14] print:text-black" />
                             </div>
-                            <Trophy className="text-[#39FF14] print:text-black" />
-                        </div>
 
-                        {player.showCareerHistory !== false && (
                             <div className="space-y-4">
-                                {player.careerHistory && player.careerHistory.length > 0 ? (
-                                    player.careerHistory.map((item: any, idx: number) => (
-                                        <div key={idx} className="group flex items-center gap-6 p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-[#39FF14]/20 transition-all print:bg-white print:border-slate-300">
-                                            <div className="w-16 h-16 rounded-full bg-[#39FF14]/10 flex items-center justify-center text-[#39FF14] font-black text-xl border border-[#39FF14]/10 print:bg-slate-100 print:text-black">
-                                                {item.year}
-                                            </div>
-                                            <div>
-                                                <h4 className="text-xl font-bold text-white group-hover:text-[#39FF14] transition-colors print:text-black">{item.club}</h4>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <ArrowRight size={14} className="text-slate-500" />
-                                                    <span className="text-slate-400 text-sm print:text-gray-600">Temporada Oficial</span>
-                                                </div>
+                                {player.careerHistory.map((item: any, idx: number) => (
+                                    <div key={idx} className="group flex items-center gap-6 p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-[#39FF14]/20 transition-all print:bg-white print:border-slate-300">
+                                        <div className="w-16 h-16 rounded-full bg-[#39FF14]/10 flex items-center justify-center text-[#39FF14] font-black text-xl border border-[#39FF14]/10 print:bg-slate-100 print:text-black">
+                                            {item.year}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xl font-bold text-white group-hover:text-[#39FF14] transition-colors print:text-black">{item.club}</h4>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <ArrowRight size={14} className="text-slate-500" />
+                                                <span className="text-slate-400 text-sm print:text-gray-600">Temporada Oficial</span>
                                             </div>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="p-8 text-center border border-dashed border-white/10 rounded-xl text-slate-500">
-                                        Sin historial registrado.
                                     </div>
-                                )}
+                                ))}
                             </div>
-                        )}
-                    </motion.div>
+                        </motion.div>
+                    )}
                 </div>
+
+                {/* 3. EXTENDED DETAILS (Contract, Health, Family, Observations) - Controlled by Visibility Toggles */}
+                {(player.privateDetails?.contract?.isPublic || player.privateDetails?.health?.isPublic || player.privateDetails?.family?.isPublic || (typeof player.privateDetails?.observations === 'object' && player.privateDetails?.observations?.isPublic)) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                        {/* Contract Section */}
+                        {player.privateDetails?.contract?.isPublic && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                className="bg-[#0A0A0A] border border-white/10 rounded-[2rem] p-8 print:bg-white print:border-black print-break-inside"
+                            >
+                                <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-2 print:text-black">
+                                    <span className="w-2 h-2 bg-[#39FF14] rounded-full"></span>
+                                    Información Contractual
+                                </h3>
+                                <div className="space-y-4">
+                                    <InfoItem label="Vencimiento" value={player.privateDetails.contract.expiryDate || '-'} />
+                                    <InfoItem label="Cláusula de Salida" value={player.privateDetails.contract.releaseClause ? `$ ${player.privateDetails.contract.releaseClause}` : '-'} />
+                                    <InfoItem label="Empresa Co-Representante" value={player.privateDetails.contract.coRepresented || '-'} />
+                                    {/* Salary is usually too sensitive even for public, but if checked public, we show it? User asked for it. */}
+                                    <InfoItem label="Salario Anual" value={player.privateDetails.contract.annualSalary ? `$ ${player.privateDetails.contract.annualSalary}` : '-'} />
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Health Section */}
+                        {player.privateDetails?.health?.isPublic && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                className="bg-[#0A0A0A] border border-white/10 rounded-[2rem] p-8 print:bg-white print:border-black print-break-inside"
+                            >
+                                <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-2 print:text-black">
+                                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                    Salud & Físico
+                                </h3>
+                                <div className="space-y-6">
+                                    <div>
+                                        <h4 className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-2">Historial de Lesiones</h4>
+                                        <p className="text-white text-sm leading-relaxed print:text-black">{player.privateDetails.health.injuryHistory || 'Sin registros.'}</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-2">Nutrición</h4>
+                                        <p className="text-white text-sm leading-relaxed print:text-black">{player.privateDetails.health.nutrition || 'Sin registros.'}</p>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* Family Section */}
+                        {player.privateDetails?.family?.isPublic && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                className="bg-[#0A0A0A] border border-white/10 rounded-[2rem] p-8 print:bg-white print:border-black print-break-inside"
+                            >
+                                <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-2 print:text-black">
+                                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                    Entorno & Familia
+                                </h3>
+                                <p className="text-white text-sm leading-relaxed print:text-black">
+                                    {player.privateDetails.family.familyNotes || 'Sin información registrada.'}
+                                </p>
+                            </motion.div>
+                        )}
+
+                        {/* Observations Section */}
+                        {typeof player.privateDetails?.observations === 'object' && player.privateDetails?.observations?.isPublic && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                className="bg-[#0A0A0A] border border-white/10 rounded-[2rem] p-8 print:bg-white print:border-black print-break-inside"
+                            >
+                                <h3 className="text-2xl font-display font-bold text-white mb-6 flex items-center gap-2 print:text-black">
+                                    <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                                    Observaciones
+                                </h3>
+                                <p className="text-white text-sm leading-relaxed print:text-black">
+                                    {player.privateDetails.observations.text || 'Sin observaciones.'}
+                                </p>
+                            </motion.div>
+                        )}
+
+                    </div>
+                )}
 
                 {/* 3. VIDEOS SECTION (Full Width) */}
                 {(player.videoList?.length > 0 || player.videoUrl) && (

@@ -63,7 +63,7 @@ export class Player {
     marketValue: string;
 
     @Column({ type: 'jsonb', default: [] })
-    additionalInfo: Array<{ label: string, value: string }>;
+    additionalInfo: Array<{ label: string, value: string, isPublic: boolean }>;
 
     @Column({ type: 'jsonb', default: {} })
     stats: any; // Flexible stats object
@@ -119,6 +119,12 @@ export class Player {
         default: 'FREE_AGENT'
     })
     representationStatus: string;
+
+    @Column({ nullable: true })
+    passport: string;
+
+    @Column({ default: 'DISPONIBLE' })
+    availability: string;
 }
 
 export enum RepresentationStatus {

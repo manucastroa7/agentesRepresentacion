@@ -15,7 +15,7 @@ const RoleCards = () => {
                             <div className="w-16 h-16 mx-auto bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6 text-blue-500">
                                 <Briefcase size={32} />
                             </div>
-                            <CardTitle className="text-2xl font-bold text-white">Para Agentes y Agencias</CardTitle>
+                            <CardTitle className="text-2xl font-bold text-white">Para Agentes y Academias</CardTitle>
                             <p className="text-blue-400 font-medium text-sm uppercase tracking-wider mt-2">Gestión Integral</p>
                         </CardHeader>
                         <CardContent className="flex-grow px-8">
@@ -37,7 +37,7 @@ const RoleCards = () => {
                         <CardFooter className="p-8 pt-4">
                             <Link to="/register?role=agent" className="w-full">
                                 <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-12">
-                                    Profesionalizar mi Agencia
+                                    Crear mi Portfolio
                                 </Button>
                             </Link>
                         </CardFooter>

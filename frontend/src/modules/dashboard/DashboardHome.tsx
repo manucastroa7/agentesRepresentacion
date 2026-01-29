@@ -157,7 +157,7 @@ const DashboardHome = () => {
         const url = `${window.location.origin}/u/${agentSlug}`;
         navigator.clipboard.writeText(url);
         toast({
-            title: "Enlace de Agencia Copiado",
+            title: "Enlace de Portfolio Copiado",
             description: "El link de tu portafolio público ha sido copiado.",
             className: "bg-[#39FF14] text-black border-none"
         });

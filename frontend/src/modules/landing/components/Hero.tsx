@@ -31,7 +31,7 @@ const Hero = () => {
                         </h1>
 
                         <p className="text-xl text-slate-400 mb-10 max-w-xl leading-relaxed font-medium">
-                            Gestión para <span className="text-white font-bold">Agentes</span>.
+                            Gestión para <span className="text-white font-bold">Agentes y Academias</span>.
                             Oportunidades para <span className="text-white font-bold">Jugadores</span>.
                             Soluciones para <span className="text-white font-bold">Clubes</span>.
                         </p>

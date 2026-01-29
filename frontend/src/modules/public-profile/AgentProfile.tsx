@@ -9,7 +9,7 @@ const AgentProfile = () => {
         email: 'manu@mcsports.com',
         phone: '+34 612 345 678',
         website: 'www.mcsports.com',
-        bio: 'Representación integral de talentos jóvenes con proyección internacional. Más de 10 años de experiencia en el mercado europeo y sudamericano.',
+        bio: 'Gestión integral de talentos jóvenes con proyección internacional. Más de 10 años de experiencia en el mercado europeo y sudamericano.',
         stats: {
             players: 24,
             transfers: '€45M',
@@ -79,7 +79,7 @@ const AgentProfile = () => {
             <div className="container mx-auto px-6 py-16">
                 <h2 className="text-2xl font-display font-bold text-gray-900 mb-8 flex items-center gap-3">
                     <span className="w-2 h-8 bg-primary rounded-full"></span>
-                    Plantel Representado
+                    Plantel Gestionado
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
