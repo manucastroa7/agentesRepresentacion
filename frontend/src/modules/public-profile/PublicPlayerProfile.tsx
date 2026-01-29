@@ -200,8 +200,12 @@ const PublicPlayerProfile = () => {
                         <InfoItem label="Peso" value={player.weight ? `${player.weight} kg` : '-'} />
                         <InfoItem label="Pie Hábil" value={player.foot === 'right' ? 'Diestro' : player.foot === 'left' ? 'Zurdo' : 'Ambidextro'} />
                         {player.passport && <InfoItem label="Pasaporte" value={player.passport} />}
-                        <InfoItem label="Club Actual" value={player.club || 'Agente Libre'} />
-                        <InfoItem label="Valor Mercado" value={<span className="text-[#39FF14] print:text-black">{player.marketValue || 'Consultar'}</span>} />
+                        {(player.club && player.club !== 'Agente Libre') && (
+                            <InfoItem label="Club Actual" value={player.club} />
+                        )}
+                        {(player.marketValue && player.marketValue !== 'Consultar') && (
+                            <InfoItem label="Valor Mercado" value={<span className="text-[#39FF14] print:text-black">{player.marketValue}</span>} />
+                        )}
                     </div>
 
                     {/* Additional Info Row if exists */}
