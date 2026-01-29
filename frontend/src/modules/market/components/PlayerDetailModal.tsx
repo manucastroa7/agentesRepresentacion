@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, PlayCircle, Ruler, Weight, MapPin, Calendar, MessageCircle, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PlayerMarketData } from './PlayerMarketCard';
+import type { PlayerMarketData } from './PlayerMarketCard';
 
 interface PlayerDetailModalProps {
     player: PlayerMarketData | null;
@@ -16,12 +16,30 @@ const PlayerDetailModal: React.FC<PlayerDetailModalProps> = ({ player, isOpen, o
     // Helper to extract YouTube ID
     const getYoutubeId = (url?: string) => {
         if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
+        try {
+            // Trim whitespace
+            const cleanUrl = url.trim();
+
+            // Regex for various YouTube URL formats
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = cleanUrl.match(regExp);
+
+            // Return the ID if found (usually match[2])
+            // We removed the strict length === 11 check to be more permissive, 
+            // but typical IDs are 11 chars. We'll check for reasonable length (e.g. at least 10)
+            if (match && match[2].length >= 10) {
+                return match[2];
+            }
+            return null;
+        } catch (error) {
+            console.error("Error parsing YouTube ID:", error);
+            return null;
+        }
     };
 
     const videoId = getYoutubeId(player.videoUrl);
+    console.log('[PlayerDetailModal] Video URL:', player.videoUrl);
+    console.log('[PlayerDetailModal] Extracted ID:', videoId);
 
     return (
         <AnimatePresence>

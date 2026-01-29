@@ -16,14 +16,26 @@ const PlayerScoutingModal: React.FC<PlayerScoutingModalProps> = ({ player, isOpe
     if (!player) return null;
 
     // Helper to extract YouTube ID
+    // Helper to extract YouTube ID
     const getYoutubeId = (url?: string) => {
         if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
+        try {
+            const cleanUrl = url.trim();
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = cleanUrl.match(regExp);
+            if (match && match[2].length >= 10) {
+                return match[2];
+            }
+            return null;
+        } catch (error) {
+            console.error("Error parsing YouTube ID:", error);
+            return null;
+        }
     };
 
     const videoId = getYoutubeId(player.videoUrl);
+    console.log('[PlayerScoutingModal] Video URL:', player.videoUrl);
+    console.log('[PlayerScoutingModal] Extracted ID:', videoId);
 
     const handleContactClick = () => {
         setShowContactInfo(true);

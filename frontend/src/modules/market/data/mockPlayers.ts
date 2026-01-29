@@ -33,7 +33,7 @@ export const MOCK_PLAYERS: PlayerMarketData[] = [
         avatarUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Juli%C3%A1n_%C3%81lvarez_2022.jpg/800px-Juli%C3%A1n_%C3%81lvarez_2022.jpg',
         agencyName: 'Fernando Hidalgo',
         agencyLogo: '',
-        videoUrl: 'https://www.youtube.com/watch?v=ExampleVideoId',
+        videoUrl: 'https://www.youtube.com/watch?v=PSanJ5swYBM', // Placeholder ID
         contractStatus: 'Con Contrato',
         marketValue: '90M'
     },
@@ -51,7 +51,7 @@ export const MOCK_PLAYERS: PlayerMarketData[] = [
         avatarUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Enzo_Fern%C3%A1ndez_2022.jpg/640px-Enzo_Fern%C3%A1ndez_2022.jpg',
         agencyName: 'Uriel Pérez',
         agencyLogo: '',
-        videoUrl: 'https://www.youtube.com/watch?v=ExampleVideoId2',
+        videoUrl: 'https://www.youtube.com/watch?v=PSanJ5swYBM', // Placeholder ID
         contractStatus: 'Con Contrato',
         marketValue: '80M'
     },
@@ -69,7 +69,7 @@ export const MOCK_PLAYERS: PlayerMarketData[] = [
         avatarUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Emiliano_Mart%C3%ADnez_2022.jpg/640px-Emiliano_Mart%C3%ADnez_2022.jpg',
         agencyName: 'Gustavo Goñi',
         agencyLogo: '',
-        videoUrl: 'https://www.youtube.com/watch?v=ExampleVideoId3',
+        videoUrl: 'https://www.youtube.com/watch?v=PSanJ5swYBM', // Placeholder ID
         contractStatus: 'Con Contrato',
         marketValue: '28M'
     },
@@ -87,7 +87,7 @@ export const MOCK_PLAYERS: PlayerMarketData[] = [
         avatarUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Valentin_Barco.jpg/640px-Valentin_Barco.jpg',
         agencyName: 'Roucco',
         agencyLogo: '',
-        videoUrl: 'https://www.youtube.com/watch?v=ExampleVideoId4',
+        videoUrl: 'https://www.youtube.com/watch?v=PSanJ5swYBM', // Placeholder ID
         contractStatus: 'Con Contrato',
         marketValue: '13M'
     },
@@ -105,7 +105,7 @@ export const MOCK_PLAYERS: PlayerMarketData[] = [
         avatarUrl: '', // Test placeholder
         agencyName: 'Tomas Deipenau',
         agencyLogo: '',
-        videoUrl: '',
+        videoUrl: 'https://www.youtube.com/watch?v=PSanJ5swYBM', // Placeholder ID
         contractStatus: 'Libre',
         marketValue: '500K'
     }

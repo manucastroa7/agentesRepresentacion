@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Calendar, Trophy, User, Mail } from 'lucide-react';
+import { MapPin, Calendar, Trophy, User, Mail, PlayCircle } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import ShareButtons from '@/components/ShareButtons';
 import MiniPitch from '@/components/soccer/MiniPitch';
@@ -50,6 +50,39 @@ const PublicPlayerProfile = () => {
 
     const age = calculateAge(player.birthDate);
 
+    // Helper to extract YouTube ID
+    const getYoutubeId = (url?: string) => {
+        if (!url) return null;
+        try {
+            const cleanUrl = url.trim();
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+            const match = cleanUrl.match(regExp);
+            if (match && match[2].length >= 10) {
+                return match[2];
+            }
+            return null;
+        } catch (error) {
+            console.error("Error parsing YouTube ID:", error);
+            return null;
+        }
+    };
+
+    // Priority: 1. Main videoUrl, 2. First video from videoList
+    const rawVideoUrl = player.videoUrl || (player.videoList && player.videoList.length > 0 ? player.videoList[0].url : null);
+
+    const videoId = getYoutubeId(rawVideoUrl);
+
+    console.log('[PublicProfile] Player:', player.firstName, player.lastName);
+    console.log('[PublicProfile] VideoUrl (Main):', player.videoUrl);
+    console.log('[PublicProfile] VideoList:', player.videoList);
+    console.log('[PublicProfile] Selected URL:', rawVideoUrl);
+    console.log('[PublicProfile] Extracted ID:', videoId);
+
+    // Combine main video and gallery videos
+    const allVideos = [
+        ...(player.videoUrl ? [player.videoUrl] : []),
+        ...(player.videoList?.map((v: any) => v.url) || [])
+    ];
 
 
     const handlePrint = () => {
@@ -274,6 +307,42 @@ const PublicPlayerProfile = () => {
                     </div>
 
                 </div>
+
+                {/* VIDEO HIGHLIGHTS (Bottom) */}
+                {allVideos.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="bg-[#0A0A0A] border border-white/10 rounded-[2rem] p-8 print:hidden"
+                    >
+                        <div className="flex items-center justify-between mb-8">
+                            <h3 className="text-2xl font-display font-bold text-white">Video Highlights</h3>
+                            <div className="text-[#39FF14]"><PlayCircle size={24} /></div>
+                        </div>
+
+                        <div className={`grid gap-6 ${allVideos.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                            {allVideos.map((url, index) => {
+                                const vId = getYoutubeId(url);
+                                if (!vId) return null;
+                                return (
+                                    <div key={index} className="aspect-video w-full relative group rounded-2xl overflow-hidden border border-white/5 bg-black">
+                                        <iframe
+                                            width="100%"
+                                            height="100%"
+                                            src={`https://www.youtube.com/embed/${vId}?autoplay=0`}
+                                            title={`Player Highlight ${index + 1}`}
+                                            frameBorder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            className="absolute inset-0"
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Footer / Powered By */}
                 <div className="max-w-[1400px] mx-auto px-6 mt-20 pt-8 border-t border-white/5 text-center text-slate-600 text-sm print:text-gray-500 print:border-gray-300 print:mt-4 print:pt-2">

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/context/authStore';
 // Components
 import Hero from './components/Hero';
 import RoleCards from './components/RoleCards';
+import ProblemSolution from './components/ProblemSolution';
 import Features from './components/Features';
 // import PricingSection from './components/PricingSection';
 
@@ -47,7 +48,9 @@ const LandingPage = () => {
 
             <RoleCards />
 
-            <Features />
+            <ProblemSolution />
+
+            {/* <Features /> */}
 
             {/* Pricing (Optional, kept from previous iteration if needed) */}
             {/* <PricingSection /> */}

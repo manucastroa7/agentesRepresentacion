@@ -26,20 +26,17 @@ const Hero = () => {
                         className="text-left z-20 pl-6"
                     >
                         <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-black text-white leading-[0.9] tracking-tighter self-start italic mb-8 uppercase drop-shadow-2xl">
-                            CONECTAMOS EL ECOSISTEMA DEL <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#39FF14] to-emerald-500 whitespace-nowrap drop-shadow-sm filter">FÚTBOL PROFESIONAL</span>
+                            TU FUTURO EMPIEZA CON UN <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#39FF14] to-emerald-500 whitespace-nowrap drop-shadow-sm filter">LINK.</span>
                         </h1>
 
                         <p className="text-xl text-slate-400 mb-10 max-w-xl leading-relaxed font-medium">
-                            Gestión para <span className="text-white font-bold">Agentes y Academias</span>.
-                            Oportunidades para <span className="text-white font-bold">Jugadores</span>.
-                            Soluciones para <span className="text-white font-bold">Clubes</span>.
+                            La plataforma que profesionaliza la <span className="text-white font-bold">carta de presentación</span> del futbolista.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4">
                             <Link to="/register">
                                 <Button size="lg" className="rounded-full h-14 px-8 bg-[#39FF14] hover:bg-[#32d612] text-slate-950 font-bold text-lg uppercase tracking-wider shadow-[0_0_20px_rgba(57,255,20,0.3)] transition-all hover:scale-105 active:scale-95">
-                                    Empezar Ahora <ArrowRight className="ml-2 h-5 w-5" />
+                                    Crear mi Perfil Gratis <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
                             </Link>
                         </div>
