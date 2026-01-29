@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/context/authStore';
-import { Plus, Search, Share2, Edit2, Globe, Trash2, LayoutGrid, List, Eye } from 'lucide-react';
+import { Plus, Search, Share2, Edit2, Trash2, LayoutGrid, List, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import defaultAvatar from '@/assets/default_avatar.png';
 import { Button } from '@/components/ui/button';
@@ -38,27 +38,14 @@ const MySquadPage = () => {
     const [players, setPlayers] = useState<Player[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [agentSlug, setAgentSlug] = useState<string | null>(user?.agentSlug || null);
+
     const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; itemId: string | null; itemName: string }>({ show: false, itemId: null, itemName: '' });
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
     const [previewPlayer, setPreviewPlayer] = useState<Player | null>(null);
 
     useEffect(() => {
         fetchPlayers();
-        if (!user?.agentSlug) {
-            fetchAgentProfile();
-        }
-    }, [user?.agentSlug]);
-
-    const fetchAgentProfile = async () => {
-        try {
-            const response = await api.get('/agents/profile');
-            const data = response.data.data || response.data;
-            setAgentSlug(data.slug);
-        } catch (error) {
-            console.error('Error fetching agent profile:', error);
-        }
-    };
+    }, []);
 
     const fetchPlayers = async () => {
         try {
@@ -152,23 +139,7 @@ const MySquadPage = () => {
         }
     };
 
-    const copyAgencyLink = () => {
-        if (!agentSlug) return;
-        const url = `${window.location.origin}/u/${agentSlug}`;
-        navigator.clipboard.writeText(url).then(() => {
-            toast({
-                title: "Enlace de Agencia Copiado",
-                description: "El link de tu portafolio público ha sido copiado.",
-                className: "bg-[#39FF14] text-black border-none"
-            });
-        }).catch(() => {
-            toast({
-                title: "Error",
-                description: "No se pudo copiar el enlace.",
-                variant: "destructive"
-            });
-        });
-    };
+
 
     const handleDelete = async (id: string) => {
         try {
@@ -225,14 +196,7 @@ const MySquadPage = () => {
                             <LayoutGrid size={20} />
                         </button>
                     </div>
-                    <Button
-                        variant="outline"
-                        className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 gap-2"
-                        onClick={copyAgencyLink}
-                        disabled={!agentSlug}
-                    >
-                        <Globe size={20} /> Compartir Plantilla
-                    </Button>
+
                     <Button
                         className="bg-[#39FF14] hover:bg-[#32d612] text-black font-bold gap-2"
                         onClick={() => navigate('/dashboard/players/new')}
@@ -330,8 +294,8 @@ const MySquadPage = () => {
                                                         variant="ghost"
                                                         size="icon"
                                                         className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800"
-                                                        onClick={() => setPreviewPlayer(player)}
-                                                        title="Vista Previa"
+                                                        onClick={() => window.open(`/p/${player.id}`, '_blank')}
+                                                        title="Ver Perfil Público"
                                                     >
                                                         <Eye size={16} />
                                                     </Button>
@@ -431,9 +395,9 @@ const MySquadPage = () => {
                                         </span>
                                     </div>
                                     <button
-                                        onClick={() => setPreviewPlayer(player)}
+                                        onClick={() => window.open(`/p/${player.id}`, '_blank')}
                                         className="text-slate-400 hover:text-white transition-colors"
-                                        title="Vista Previa"
+                                        title="Ver Perfil Público"
                                     >
                                         <Eye size={18} />
                                     </button>

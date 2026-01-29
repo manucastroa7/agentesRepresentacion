@@ -188,7 +188,7 @@ const AgentPublicPortfolio = () => {
                                         className="inline-flex items-center gap-2 px-6 py-3 bg-[#39FF14] text-slate-950 font-bold rounded-lg hover:bg-[#32d613] hover:shadow-[0_0_20px_rgba(57,255,20,0.3)] transition-all duration-300"
                                     >
                                         <Mail size={20} />
-                                        Contactar Agencia
+                                        Enviar por mail
                                     </a>
                                 )}
                             </div>
