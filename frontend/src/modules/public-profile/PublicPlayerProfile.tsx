@@ -78,11 +78,10 @@ const PublicPlayerProfile = () => {
     console.log('[PublicProfile] Selected URL:', rawVideoUrl);
     console.log('[PublicProfile] Extracted ID:', videoId);
 
-    // Combine main video and gallery videos
-    const allVideos = [
-        ...(player.videoUrl ? [player.videoUrl] : []),
-        ...(player.videoList?.map((v: any) => v.url) || [])
-    ];
+    // Combine main video and gallery videos, ensuring uniqueness
+    const mainVideoPoints = player.videoUrl ? [player.videoUrl] : [];
+    const galleryPoints = player.videoList?.map((v: any) => v.url) || [];
+    const allVideos = Array.from(new Set([...mainVideoPoints, ...galleryPoints]));
 
 
     const handlePrint = () => {
