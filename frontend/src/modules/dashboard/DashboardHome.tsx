@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, Radar, Calendar, Globe, AlertTriangle, PlayCircle, Image as ImageIcon, Edit2 } from 'lucide-react';
+import { Users, Radar, Calendar, Globe, Save, Edit, X } from 'lucide-react';
 import { useAuthStore } from '@/context/authStore';
 import { useToast } from '@/hooks/use-toast';
 import { API_BASE_URL } from '@/config/api';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+import { renderWidget, WIDGETS_REGISTRY, WidgetType } from './components/DashboardWidgets';
+import { Link } from 'react-router-dom';
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 type Player = {
     id: string;
@@ -14,8 +20,11 @@ type Player = {
     birthDate?: string;
     status?: string;
     avatarUrl?: string;
-    videoUrl?: string;
+    videoUrl?: string; // Legacy
+    videoList?: Array<{ url: string; title?: string }>;
+    videos?: Array<{ url: string; title?: string }>; // Relation
     createdAt?: string;
+    marketValue?: string;
 };
 
 type PieSlice = { name: string; value: number };
@@ -27,7 +36,15 @@ const POSITION_GROUPS = [
     { label: 'Delantero', keywords: ['delantero', 'forward', 'fw', 'st', 'wing', 'extremo'] },
 ];
 
-const COLORS = ['#39FF14', '#0EA5E9', '#E2E8F0', '#94A3B8'];
+const DEFAULT_LAYOUT = [
+    { i: 'kpi_squad', x: 0, y: 0, w: 1, h: 4, type: 'KPI_SQUAD' as WidgetType },
+    { i: 'kpi_scouting', x: 1, y: 0, w: 1, h: 4, type: 'KPI_SCOUTING' as WidgetType },
+    { i: 'kpi_age', x: 2, y: 0, w: 1, h: 4, type: 'KPI_AGE' as WidgetType },
+    { i: 'kpi_quality', x: 3, y: 0, w: 1, h: 4, type: 'KPI_QUALITY' as WidgetType },
+    { i: 'chart_pos', x: 0, y: 4, w: 2, h: 8, type: 'CHART_POSITIONS' as WidgetType },
+    { i: 'list_alerts', x: 2, y: 4, w: 1, h: 8, type: 'LIST_ALERTS' as WidgetType },
+    { i: 'list_recent', x: 3, y: 4, w: 1, h: 8, type: 'LIST_RECENT' as WidgetType },
+];
 
 const DashboardHome = () => {
     const { token, user } = useAuthStore();
@@ -35,6 +52,9 @@ const DashboardHome = () => {
     const [players, setPlayers] = useState<Player[]>([]);
     const [agentSlug, setAgentSlug] = useState<string | null>(user?.agentSlug || null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentLayout, setCurrentLayout] = useState(DEFAULT_LAYOUT.map(({ type, ...rest }) => rest));
+    const [widgets, setWidgets] = useState(DEFAULT_LAYOUT);
 
     useEffect(() => {
         const fetchPlayers = async () => {
@@ -49,19 +69,12 @@ const DashboardHome = () => {
                 setPlayers(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error('Error fetching players', error);
-                toast({
-                    title: 'No se pudieron cargar los jugadores',
-                    description: 'Intenta nuevamente o revisa tu conexión.',
-                    variant: 'destructive',
-                });
+
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchPlayers();
-    }, [token, toast]);
 
-    useEffect(() => {
         const fetchAgentProfile = async () => {
             if (!token) return;
             try {
@@ -78,10 +91,32 @@ const DashboardHome = () => {
             }
         };
 
-        if (!user?.agentSlug) {
-            fetchAgentProfile();
+        // Load dashboard config
+        const fetchDashboardConfig = async () => {
+            if (!token) return;
+            // Assuming we fetch user profile again or specific endpoint
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/profile`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData.dashboardConfig && Array.isArray(userData.dashboardConfig)) {
+                        setWidgets(userData.dashboardConfig);
+                        setCurrentLayout(userData.dashboardConfig.map(({ type, ...rest }: any) => rest));
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading dashboard config", e);
+            }
         }
-    }, [token, user?.agentSlug]);
+
+        fetchPlayers();
+        if (!user?.agentSlug) fetchAgentProfile();
+        fetchDashboardConfig();
+
+    }, [token, toast, user?.agentSlug]);
+
 
     const {
         signedPlayers,
@@ -111,8 +146,16 @@ const DashboardHome = () => {
             .filter((a): a is number => a !== null);
         const avgAgeVal = ages.length ? (ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
 
+        const hasVideo = (p: Player) => {
+            return !!(
+                p.videoUrl ||
+                (p.videoList && p.videoList.length > 0) ||
+                (p.videos && p.videos.length > 0)
+            );
+        };
+
         const dataQualityPct = players.length
-            ? Math.round((players.filter(p => !!p.videoUrl).length / players.length) * 100)
+            ? Math.round((players.filter(p => hasVideo(p)).length / players.length) * 100)
             : 0;
 
         const groupPosition = (pos?: string | string[]) => {
@@ -132,7 +175,7 @@ const DashboardHome = () => {
         const pie: PieSlice[] = Object.entries(pieGrouped).map(([name, value]) => ({ name, value }));
 
         const pending = players
-            .filter(p => !p.videoUrl || !p.avatarUrl)
+            .filter(p => !hasVideo(p) || !p.avatarUrl)
             .slice(0, 5);
 
         const recent = [...signed].sort((a, b) => {
@@ -144,13 +187,70 @@ const DashboardHome = () => {
         return {
             signedPlayers: signed,
             scoutingPlayers: scouting,
-            avgAge: avgAgeVal,
+            avgAge: avgAgeVal ? avgAgeVal.toFixed(1) : '—',
             dataQuality: dataQualityPct,
             pieData: pie,
             pendingCompletion: pending,
             recentSignings: recent,
         };
     }, [players]);
+
+    const dashboardData = {
+        signedCount: signedPlayers.length,
+        scoutingCount: scoutingPlayers.length,
+        avgAge,
+        dataQuality,
+        pieData,
+        pendingCompletion,
+        recentSignings
+    };
+
+    const handleLayoutChange = (layout: any) => {
+        setCurrentLayout(layout);
+    };
+
+    const saveLayout = async () => {
+        // Merge current layout with widget types
+        const newConfig = currentLayout.map(l => {
+            const widget = widgets.find(w => w.i === l.i);
+            return {
+                ...l,
+                type: widget?.type
+            };
+        });
+
+        setWidgets(newConfig); // Update local state full check
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/dashboard-config`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(newConfig)
+            });
+
+            if (response.ok) {
+                toast({
+                    title: "Dashboard guardado",
+                    description: "Tu configuración se ha actualizado exitosamente.",
+                    className: "bg-[#39FF14] text-black border-none"
+                });
+                setIsEditing(false);
+            } else {
+                throw new Error("Failed to save");
+            }
+
+        } catch (error) {
+            toast({
+                title: "Error al guardar",
+                description: "No se pudo guardar la configuración.",
+                variant: 'destructive',
+            });
+        }
+    };
+
 
     const copyAgencyLink = () => {
         if (!agentSlug) return;
@@ -163,37 +263,6 @@ const DashboardHome = () => {
         });
     };
 
-    const kpiCards = [
-        {
-            title: 'Plantel',
-            value: signedPlayers.length,
-            icon: Users,
-            accent: '#39FF14',
-            subtitle: 'Jugadores firmados',
-        },
-        {
-            title: 'Scouting',
-            value: scoutingPlayers.length,
-            icon: Radar,
-            accent: '#0EA5E9',
-            subtitle: 'En observación',
-        },
-        {
-            title: 'Edad Promedio',
-            value: avgAge ? avgAge.toFixed(1) : '—',
-            icon: Calendar,
-            accent: '#E2E8F0',
-            subtitle: 'Plantel firmado',
-        },
-        {
-            title: 'Calidad de Datos',
-            value: `${dataQuality}%`,
-            icon: Globe,
-            accent: '#94A3B8',
-            subtitle: 'Con video cargado',
-        },
-    ];
-
     return (
         <div className="space-y-6 pb-10">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -201,181 +270,69 @@ const DashboardHome = () => {
                     <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Centro de comando</p>
                     <h1 className="text-3xl font-display font-bold text-white mt-1">Dashboard</h1>
                 </div>
-                <button
-                    onClick={copyAgencyLink}
-                    disabled={!agentSlug}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <Globe size={16} />
-                    Compartir Sitio Público
-                </button>
-            </div>
-
-            {/* KPIs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {kpiCards.map((card, idx) => (
-                    <motion.div
-                        key={card.title}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="bg-slate-900/60 border border-white/5 rounded-2xl p-4 flex items-center gap-4 shadow-lg"
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => isEditing ? saveLayout() : setIsEditing(true)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${isEditing
+                            ? 'bg-[#39FF14] text-black hover:bg-[#32d612] border-[#39FF14]'
+                            : 'bg-slate-800 text-white hover:bg-slate-700 border-slate-700'}`}
                     >
-                        <div
-                            className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/10"
-                            style={{ backgroundColor: `${card.accent}20`, color: card.accent }}
+                        {isEditing ? <Save size={16} /> : <Edit size={16} />}
+                        {isEditing ? 'Guardar Cambios' : 'Personalizar'}
+                    </button>
+                    {isEditing && (
+                        <button
+                            onClick={() => {
+                                setIsEditing(false);
+                                // Reset layout logic if needed or refetch
+                                setCurrentLayout(widgets.map(({ type, ...rest }) => rest));
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg border border-red-500/20 transition-all text-sm font-medium"
                         >
-                            <card.icon size={24} />
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-slate-400 text-sm">{card.title}</p>
-                            <motion.div
-                                key={card.value}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-2xl font-bold text-white"
-                            >
-                                {isLoading ? '...' : card.value}
-                            </motion.div>
-                            <p className="text-slate-500 text-xs">{card.subtitle}</p>
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                {/* Pie Chart */}
-                <div className="xl:col-span-2 bg-slate-900/60 border border-white/5 rounded-3xl p-6 shadow-xl">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Plantel</p>
-                            <h3 className="text-white text-xl font-display font-bold">Distribución del Plantel</h3>
-                        </div>
-                    </div>
-                    <div className="h-80">
-                        {pieData.length === 0 ? (
-                            <div className="h-full flex items-center justify-center text-slate-500 text-sm">
-                                Sin datos para mostrar aún.
-                            </div>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={pieData}
-                                        dataKey="value"
-                                        nameKey="name"
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={70}
-                                        outerRadius={110}
-                                        paddingAngle={3}
-                                    >
-                                        {pieData.map((_, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        content={({ active, payload }) => {
-                                            if (active && payload && payload.length) {
-                                                const item = payload[0];
-                                                return (
-                                                    <div className="bg-slate-900 text-white text-sm border border-white/10 rounded-lg px-3 py-2 shadow-xl">
-                                                        <p className="font-bold">{item.name}</p>
-                                                        <p className="text-slate-300">Jugadores: {item.value}</p>
-                                                    </div>
-                                                );
-                                            }
-                                            return null;
-                                        }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        )}
-                    </div>
-                </div>
-
-                {/* Alerts */}
-                <div className="bg-slate-900/60 border border-white/5 rounded-3xl p-6 shadow-xl">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                            <AlertTriangle className="text-amber-400" size={18} />
-                            <h3 className="text-white text-lg font-display font-bold">Atención Requerida ⚠️</h3>
-                        </div>
-                        <span className="text-xs text-slate-500">{pendingCompletion.length} pendientes</span>
-                    </div>
-                    {pendingCompletion.length === 0 ? (
-                        <p className="text-slate-500 text-sm">Todos los perfiles tienen video y foto.</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {pendingCompletion.map((p) => (
-                                <div key={p.id} className="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2 border border-white/5">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 border border-white/10 overflow-hidden">
-                                            {p.avatarUrl ? (
-                                                <img src={p.avatarUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <ImageIcon size={16} />
-                                            )}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-white text-sm font-semibold truncate">{p.firstName} {p.lastName}</p>
-                                            <p className="text-slate-500 text-xs">
-                                                {!p.videoUrl && 'Sin video'} {(!p.videoUrl && !p.avatarUrl) ? '·' : ''} {!p.avatarUrl && 'Sin foto'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => window.location.href = `/dashboard/players/edit/${p.id}`}
-                                        className="text-xs px-3 py-1 rounded-lg bg-[#39FF14]/15 text-[#39FF14] border border-[#39FF14]/30 hover:bg-[#39FF14]/25 transition-colors flex items-center gap-1"
-                                    >
-                                        <Edit2 size={12} /> Editar
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                            <X size={16} />
+                            Cancelar
+                        </button>
                     )}
+                    <button
+                        onClick={copyAgencyLink}
+                        disabled={!agentSlug}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Globe size={16} />
+                        Compartir
+                    </button>
                 </div>
             </div>
 
-            {/* Latest Signings */}
-            <div className="bg-slate-900/60 border border-white/5 rounded-3xl p-6 shadow-xl">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-white text-lg font-display font-bold">Últimos fichajes</h3>
-                    <span className="text-xs text-slate-500">3 más recientes</span>
-                </div>
-                {recentSignings.length === 0 ? (
-                    <p className="text-slate-500 text-sm">Aún no hay fichajes registrados.</p>
-                ) : (
-                    <div className="space-y-2">
-                        {recentSignings.map((p) => (
-                            <div key={p.id} className="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2 border border-white/5">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 border border-white/10 overflow-hidden">
-                                        {p.avatarUrl ? (
-                                            <img src={p.avatarUrl} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <Users size={16} />
-                                        )}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-white text-sm font-semibold truncate">{p.firstName} {p.lastName}</p>
-                                        <p className="text-slate-500 text-xs">
-                                            Alta: {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/D'}
-                                        </p>
-                                    </div>
-                                </div>
-                                {p.videoUrl ? (
-                                    <span className="text-[10px] px-2 py-1 rounded-full bg-[#39FF14]/15 text-[#39FF14] border border-[#39FF14]/30">Con video</span>
-                                ) : (
-                                    <span className="text-[10px] px-2 py-1 rounded-full bg-slate-800 text-slate-300 border border-white/10 flex items-center gap-1">
-                                        <PlayCircle size={12} /> Sin video
-                                    </span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
+            <div className={isEditing ? "border-2 border-dashed border-[#39FF14]/30 rounded-3xl p-4 bg-[#39FF14]/5" : ""}>
+                <ResponsiveGridLayout
+                    className="layout"
+                    layouts={{ lg: currentLayout }}
+                    breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                    cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
+                    rowHeight={30}
+                    isDraggable={isEditing}
+                    isResizable={isEditing}
+                    onLayoutChange={handleLayoutChange}
+                    margin={[16, 16]}
+                    draggableHandle=".drag-handle"
+                >
+                    {widgets.map(widget => (
+                        <div key={widget.i} className={isEditing ? "cursor-move relative group ring-1 ring-white/10 rounded-3xl" : ""}>
+                            {isEditing && (
+                                <div className="absolute inset-0 z-50 bg-black/10 hover:bg-black/0 transition-colors drag-handle rounded-3xl" />
+                            )}
+                            {renderWidget(widget.type as WidgetType, dashboardData)}
+                        </div>
+                    ))}
+                </ResponsiveGridLayout>
             </div>
+
+            {isEditing && (
+                <div className="text-center text-slate-500 text-sm mt-4">
+                    Arrastra y suelta los widgets para reorganizarlos. Haz clic en "Guardar Cambios" para aplicar.
+                </div>
+            )}
         </div>
     );
 };

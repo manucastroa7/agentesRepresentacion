@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, Reorder } from 'framer-motion';
 import * as Tabs from '@radix-ui/react-tabs';
@@ -7,6 +7,7 @@ import * as Accordion from '@radix-ui/react-accordion';
 import { User, Activity, ImageIcon, Save, ChevronDown, Plus, Trash2, Upload, Lock, GripVertical } from 'lucide-react';
 import MiniPitch from '@/components/soccer/MiniPitch';
 import { useAuthStore } from '@/context/authStore';
+import { Switch } from '@/components/ui/switch';
 import InputGroup from './components/InputGroup';
 import { API_BASE_URL } from '@/config/api';
 import defaultAvatar from '@/assets/default_avatar.png';
@@ -62,6 +63,7 @@ interface FormData {
     availability: string;
     hasClub: boolean;
     hasMarketValue: boolean;
+    isMarketplaceVisible: boolean;
 }
 
 const CreatePlayerForm = () => {
@@ -84,6 +86,7 @@ const CreatePlayerForm = () => {
             birthDate: '',
             avatarUrl: '',
             videoUrl: '',
+            isMarketplaceVisible: true,
             status: 'signed',
             club: '',
             marketValue: '',
@@ -157,6 +160,7 @@ const CreatePlayerForm = () => {
                             availability: data.availability || 'DISPONIBLE',
                             hasClub: !!data.club,
                             hasMarketValue: !!data.marketValue,
+                            isMarketplaceVisible: data.isMarketplaceVisible !== false, // Default to true if undefined
                             privateDetails: {
                                 contract: {
                                     expiryDate: typeof data.privateDetails?.contract?.expiryDate === 'object'
@@ -318,7 +322,8 @@ const CreatePlayerForm = () => {
             passport: data.hasPassport ? data.passport : null,
             availability: data.availability,
             club: data.hasClub ? data.club : null,
-            marketValue: data.hasMarketValue ? data.marketValue : null
+            marketValue: data.hasMarketValue ? data.marketValue : null,
+            isMarketplaceVisible: data.isMarketplaceVisible
         };
 
         if (!token) {
@@ -385,21 +390,37 @@ const CreatePlayerForm = () => {
                     <h1 className="text-4xl font-display font-bold text-white tracking-tight">{id ? 'Editar Jugador' : 'Nuevo Jugador'}</h1>
                     <p className="text-slate-400 mt-1">{id ? 'Modifica la información del perfil.' : 'Completa la información para crear un nuevo perfil.'}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => navigate('/dashboard/players')}
-                        className="px-6 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-medium"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        onClick={handleSubmit(onSubmit)}
-                        disabled={uploadingImage || uploadingVideo}
-                        className={`px-8 py-3 bg-[#39FF14] hover:bg-[#32d912] text-slate-950 rounded-xl font-bold tracking-wide shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:shadow-[0_0_30px_rgba(57,255,20,0.5)] transition-all flex items-center gap-2 ${uploadingImage || uploadingVideo ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                        <Save size={20} />
-                        {uploadingImage || uploadingVideo ? 'SUBIENDO...' : 'GUARDAR JUGADOR'}
-                    </button>
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3 bg-slate-900/50 p-2 rounded-xl border border-white/5">
+                        <span className="text-sm font-bold text-slate-300">Visible en Portfolio</span>
+                        <Controller
+                            name="isMarketplaceVisible"
+                            control={control}
+                            render={({ field }) => (
+                                <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    className="data-[state=checked]:bg-[#39FF14]"
+                                />
+                            )}
+                        />
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navigate('/dashboard/players')}
+                            className="px-6 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-medium"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleSubmit(onSubmit)}
+                            disabled={uploadingImage || uploadingVideo}
+                            className={`px-8 py-3 bg-[#39FF14] hover:bg-[#32d912] text-slate-950 rounded-xl font-bold tracking-wide shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:shadow-[0_0_30px_rgba(57,255,20,0.5)] transition-all flex items-center gap-2 ${uploadingImage || uploadingVideo ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            <Save size={20} />
+                            {uploadingImage || uploadingVideo ? 'SUBIENDO...' : 'GUARDAR JUGADOR'}
+                        </button>
+                    </div>
                 </div>
             </div>
 

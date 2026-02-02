@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/context/authStore';
-import { Plus, Search, Share2, Edit2, Trash2, LayoutGrid, List, Eye } from 'lucide-react';
+import { Plus, Search, Share2, Edit2, Trash2, LayoutGrid, List, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import defaultAvatar from '@/assets/default_avatar.png';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ interface Player {
     position: string | string[];
     nationality: string;
     contractStatus: string; // 'Libre', 'Con Contrato'
+    availability?: string; // 'DISPONIBLE', 'NO DISPONIBLE'
     isMarketplaceVisible: boolean;
     avatarUrl?: string;
     birthDate?: string;
@@ -42,6 +43,10 @@ const MySquadPage = () => {
     const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; itemId: string | null; itemName: string }>({ show: false, itemId: null, itemName: '' });
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
     const [previewPlayer, setPreviewPlayer] = useState<Player | null>(null);
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
         fetchPlayers();
@@ -166,6 +171,19 @@ const MySquadPage = () => {
         p.lastName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Reset pagination when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
+    // Pagination Logic
+    const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+    const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+    const currentPlayers = filteredPlayers.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredPlayers.length / ITEMS_PER_PAGE);
+
+    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
     const calculateAge = (dateString?: string) => {
         if (!dateString) return '-';
         const ageDifMs = Date.now() - new Date(dateString).getTime();
@@ -229,7 +247,7 @@ const MySquadPage = () => {
                                     <th className="px-6 py-4">Edad</th>
                                     <th className="px-6 py-4">Nacionalidad</th>
                                     <th className="px-6 py-4">Estado</th>
-                                    <th className="px-6 py-4 text-center">Portfolio</th>
+                                    <th className="px-6 py-4 text-center">Visibilidad</th>
                                     <th className="px-6 py-4 text-right">Acciones</th>
                                 </tr>
                             </thead>
@@ -238,14 +256,14 @@ const MySquadPage = () => {
                                     <tr>
                                         <td colSpan={7} className="px-6 py-12 text-center text-slate-500">Cargando jugadores...</td>
                                     </tr>
-                                ) : filteredPlayers.length === 0 ? (
+                                ) : currentPlayers.length === 0 ? (
                                     <tr>
                                         <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                                             No se encontraron jugadores. ¡Agrega uno nuevo!
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredPlayers.map((player) => (
+                                    currentPlayers.map((player) => (
                                         <tr key={player.id} className="hover:bg-slate-800/50 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
@@ -269,11 +287,11 @@ const MySquadPage = () => {
                                             <td className="px-6 py-4">{calculateAge(player.birthDate)} años</td>
                                             <td className="px-6 py-4">{player.nationality || '-'}</td>
                                             <td className="px-6 py-4">
-                                                <Badge variant="outline" className={`${player.contractStatus === 'Libre'
+                                                <Badge variant="outline" className={`${player.availability === 'DISPONIBLE'
                                                     ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                                    : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                    : 'bg-red-500/10 text-red-400 border-red-500/20'
                                                     }`}>
-                                                    {player.contractStatus}
+                                                    {player.availability || player.contractStatus}
                                                 </Badge>
                                             </td>
                                             <td className="px-6 py-4 text-center">
@@ -337,7 +355,7 @@ const MySquadPage = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredPlayers.map((player) => (
+                    {currentPlayers.map((player) => (
                         <div key={player.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-[#39FF14]/50 transition-all group relative">
                             <div className="h-48 bg-slate-800 relative">
                                 <img
@@ -375,11 +393,11 @@ const MySquadPage = () => {
                                     <Badge variant="outline" className="bg-slate-800 border-slate-700 text-slate-300">
                                         {calculateAge(player.birthDate)} años
                                     </Badge>
-                                    <Badge variant="outline" className={`${player.contractStatus === 'Libre'
+                                    <Badge variant="outline" className={`${player.availability === 'DISPONIBLE'
                                         ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                        : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                        : 'bg-red-500/10 text-red-400 border-red-500/20'
                                         }`}>
-                                        {player.contractStatus}
+                                        {player.availability || player.contractStatus}
                                     </Badge>
                                 </div>
 
@@ -411,6 +429,48 @@ const MySquadPage = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {!loading && filteredPlayers.length > ITEMS_PER_PAGE && (
+                <div className="flex items-center justify-center gap-4 mt-8">
+                    <button
+                        onClick={() => paginate(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`p-2 rounded-lg border transition-all ${currentPage === 1
+                            ? 'border-slate-800 text-slate-600 cursor-not-allowed'
+                            : 'border-slate-700 text-white hover:border-[#39FF14] hover:text-[#39FF14]'
+                            }`}
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                        {Array.from({ length: totalPages }, (_, i) => (
+                            <button
+                                key={i + 1}
+                                onClick={() => paginate(i + 1)}
+                                className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${currentPage === i + 1
+                                    ? 'bg-[#39FF14] text-black'
+                                    : 'bg-slate-900 text-slate-400 hover:text-white'
+                                    }`}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={() => paginate(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className={`p-2 rounded-lg border transition-all ${currentPage === totalPages
+                            ? 'border-slate-800 text-slate-600 cursor-not-allowed'
+                            : 'border-slate-700 text-white hover:border-[#39FF14] hover:text-[#39FF14]'
+                            }`}
+                    >
+                        <ChevronRight size={20} />
+                    </button>
                 </div>
             )}
 
