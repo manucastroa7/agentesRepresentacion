@@ -28,6 +28,9 @@ export class User {
     @Column({ nullable: true })
     refreshTokenHash: string;
 
+    @Column({ type: 'json', nullable: true })
+    dashboardConfig: any;
+
     @CreateDateColumn()
     createdAt: Date;
 

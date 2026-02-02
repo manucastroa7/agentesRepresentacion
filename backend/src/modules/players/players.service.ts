@@ -143,7 +143,7 @@ export class PlayersService {
 
         return this.playerRepository.find({
             where: { agent: { id: agent.id } },
-            relations: ['media'],
+            relations: ['media', 'videos'],
             order: { createdAt: 'DESC' }
         });
     }
@@ -233,7 +233,7 @@ export class PlayersService {
         console.log('   - Filtering by status:', PlayerStatus.SIGNED);
 
         const players = await this.playerRepository.find({
-            where: { agentId, status: PlayerStatus.SIGNED },
+            where: { agentId, status: PlayerStatus.SIGNED, isMarketplaceVisible: true },
             select: {
                 id: true,
                 firstName: true,
@@ -267,7 +267,8 @@ export class PlayersService {
         const player = await this.playerRepository.findOne({
             where: {
                 id,
-                status: PlayerStatus.SIGNED
+                status: PlayerStatus.SIGNED,
+                isMarketplaceVisible: true
             },
             relations: ['agent', 'media'],
             select: {
@@ -310,6 +311,7 @@ export class PlayersService {
                 id: playerId,
                 agentId,
                 status: PlayerStatus.SIGNED,
+                isMarketplaceVisible: true
             },
             relations: ['agent', 'media'],
             select: {
@@ -354,7 +356,7 @@ export class PlayersService {
         allPlayers.forEach(p => console.log(`   - ${p.firstName}: Status=${p.status}, Visible=${p.isMarketplaceVisible}`));
 
         const players = await this.playerRepository.find({
-            where: { status: PlayerStatus.SIGNED },
+            where: { status: PlayerStatus.SIGNED, isMarketplaceVisible: true },
             relations: ['agent'],
             select: {
                 id: true,

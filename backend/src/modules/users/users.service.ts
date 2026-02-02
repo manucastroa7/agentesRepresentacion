@@ -25,4 +25,8 @@ export class UsersService {
     async delete(id: string): Promise<void> {
         await this.usersRepository.delete(id);
     }
+    async updateDashboardConfig(userId: string, config: any): Promise<User | null> {
+        await this.usersRepository.update(userId, { dashboardConfig: config });
+        return this.usersRepository.findById(userId);
+    }
 }
