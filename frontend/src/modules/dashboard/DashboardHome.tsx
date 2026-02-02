@@ -1,16 +1,36 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Radar, Calendar, Globe, Save, Edit, X } from 'lucide-react';
 import { useAuthStore } from '@/context/authStore';
 import { useToast } from '@/hooks/use-toast';
 import { API_BASE_URL } from '@/config/api';
-import { Responsive, WidthProvider } from 'react-grid-layout';
+import * as RGL from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { renderWidget, WIDGETS_REGISTRY, WidgetType } from './components/DashboardWidgets';
+import { renderWidget, WIDGETS_REGISTRY, type WidgetType } from './components/DashboardWidgets';
 import { Link } from 'react-router-dom';
 
-const ResponsiveGridLayout = WidthProvider(Responsive);
+// @ts-ignore
+const ResponsiveGridLayout = RGL.Responsive || RGL.default?.Responsive || RGL.default;
+
+// Custom Width Provider Hook to avoid RGL HOC issues with React 19
+const useWidth = () => {
+    const [width, setWidth] = useState(1200);
+    const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!containerRef) return;
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                setWidth(entry.contentRect.width);
+            }
+        });
+        resizeObserver.observe(containerRef);
+        return () => resizeObserver.disconnect();
+    }, [containerRef]);
+
+    return { width, setContainerRef };
+};
 
 type Player = {
     id: string;
@@ -55,6 +75,7 @@ const DashboardHome = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentLayout, setCurrentLayout] = useState(DEFAULT_LAYOUT.map(({ type, ...rest }) => rest));
     const [widgets, setWidgets] = useState(DEFAULT_LAYOUT);
+    const { width, setContainerRef } = useWidth();
 
     useEffect(() => {
         const fetchPlayers = async () => {
@@ -215,7 +236,7 @@ const DashboardHome = () => {
             const widget = widgets.find(w => w.i === l.i);
             return {
                 ...l,
-                type: widget?.type
+                type: (widget?.type || 'KPI_SQUAD') as WidgetType
             };
         });
 
@@ -304,9 +325,10 @@ const DashboardHome = () => {
                 </div>
             </div>
 
-            <div className={isEditing ? "border-2 border-dashed border-[#39FF14]/30 rounded-3xl p-4 bg-[#39FF14]/5" : ""}>
+            <div ref={setContainerRef} className={isEditing ? "border-2 border-dashed border-[#39FF14]/30 rounded-3xl p-4 bg-[#39FF14]/5" : ""}>
                 <ResponsiveGridLayout
                     className="layout"
+                    width={width}
                     layouts={{ lg: currentLayout }}
                     breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                     cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
