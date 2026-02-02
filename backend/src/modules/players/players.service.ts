@@ -243,6 +243,7 @@ export class PlayersService {
                 birthDate: true,
                 avatarUrl: true,
                 videoUrl: true,
+                passport: true,
                 createdAt: true,
             } as any,
             order: { createdAt: 'DESC' }
@@ -283,6 +284,7 @@ export class PlayersService {
                 foot: true,
                 avatarUrl: true,
                 videoUrl: true,
+                passport: true,
                 videoList: true,
                 additionalInfo: true,
                 careerHistory: true,
@@ -326,6 +328,7 @@ export class PlayersService {
                 foot: true,
                 avatarUrl: true,
                 videoUrl: true,
+                passport: true,
                 videoList: true,
                 additionalInfo: true,
                 careerHistory: true,

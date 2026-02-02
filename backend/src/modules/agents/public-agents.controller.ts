@@ -51,6 +51,7 @@ export class PublicAgentsController {
                 birthDate: player.birthDate,
                 avatarUrl: player.avatarUrl,
                 videoUrl: player.videoUrl,
+                passport: player.passport,
             })),
         };
     }
