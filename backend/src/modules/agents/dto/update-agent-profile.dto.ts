@@ -15,6 +15,12 @@ class SocialLinksDto {
     twitter?: string;
 }
 
+class BrandingDto {
+    @IsOptional()
+    @IsString()
+    primaryColor?: string;
+}
+
 export class UpdateAgentProfileDto {
     @IsOptional()
     @IsString()
@@ -38,7 +44,11 @@ export class UpdateAgentProfileDto {
     logo?: string;
 
     @IsOptional()
-    @ValidateNested()
     @Type(() => SocialLinksDto)
     socialLinks?: SocialLinksDto;
+
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => BrandingDto)
+    branding?: BrandingDto;
 }

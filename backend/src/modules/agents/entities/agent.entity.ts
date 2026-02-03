@@ -43,6 +43,11 @@ export class Agent {
         twitter?: string;
     };
 
+    @Column({ type: 'jsonb', nullable: true, default: () => "'{}'" })
+    branding: {
+        primaryColor?: string;
+    };
+
     @Column({ unique: true })
     slug: string; // For subdomain
 

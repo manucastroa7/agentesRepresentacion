@@ -95,7 +95,7 @@ export class AgentsService {
     async updateProfile(userId: string, data: Partial<Agent>): Promise<Agent> {
         const agent = await this.findByUserId(userId);
 
-        const allowedFields = ['phone', 'location', 'bio', 'website', 'socialLinks', 'logo'] as const;
+        const allowedFields = ['phone', 'location', 'bio', 'website', 'socialLinks', 'logo', 'branding'] as const;
         allowedFields.forEach((key) => {
             if (data[key] !== undefined) {
                 (agent as any)[key] = data[key];
