@@ -11,6 +11,9 @@ interface Agent {
     logo: string | null;
     slug: string;
     contactEmail: string;
+    branding?: {
+        primaryColor?: string;
+    };
 }
 
 interface Player {
@@ -45,12 +48,26 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     'delantero': ['delantero', 'forward', 'atacante', 'punta', 'extremo', 'ariete', 'st', 'rw', 'lw']
 };
 
+// Helper: Convert Hex to RGB {r,g,b}
+const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '57, 255, 20';
+};
+
+import { useAgentTheme } from '@/hooks/useAgentTheme';
+
+// ... imports
+
 const AgentPublicPortfolio = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
     const [data, setData] = useState<PortfolioData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const primaryColor = data?.agent.branding?.primaryColor || '#39FF14';
+    useAgentTheme(primaryColor);
+    const primaryRgb = hexToRgb(primaryColor);
 
     // Filter States
     const [selectedFilter, setSelectedFilter] = useState('all'); // Position Filter
@@ -151,6 +168,9 @@ const AgentPublicPortfolio = () => {
         return matchesPosition && matchesSearch && matchesNation && matchesPassport && matchesAge;
     }) || [];
 
+    // --- Branding Logic ---
+
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -171,7 +191,8 @@ const AgentPublicPortfolio = () => {
                     </p>
                     <button
                         onClick={() => navigate('/')}
-                        className="px-6 py-3 bg-[#39FF14] text-slate-950 font-bold rounded-lg hover:bg-[#32d613] transition-colors"
+                        className="px-6 py-3 bg-[var(--primary)] text-slate-950 font-bold rounded-lg hover:opacity-90 transition-colors"
+                        style={{ '--primary': '#39FF14' } as any}
                     >
                         Volver al inicio
                     </button>
@@ -182,6 +203,14 @@ const AgentPublicPortfolio = () => {
 
     return (
         <div className="min-h-screen bg-slate-950 text-white">
+            {/* Dynamic Branding Styles */}
+            <style>{`
+                :root {
+                    --primary: ${primaryColor};
+                    --primary-rgb: ${primaryRgb};
+                }
+            `}</style>
+
             {/* Background Pattern */}
             <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none bg-tactical-grid" />
 
@@ -224,7 +253,7 @@ const AgentPublicPortfolio = () => {
                                 {data.agent.contactEmail && (
                                     <a
                                         href={`mailto:${data.agent.contactEmail}`}
-                                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#39FF14] text-slate-950 font-bold rounded-lg hover:bg-[#32d613] hover:shadow-[0_0_20px_rgba(57,255,20,0.3)] transition-all duration-300"
+                                        className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--primary)] text-slate-950 font-bold rounded-lg hover:opacity-90 hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)] transition-all duration-300"
                                     >
                                         <Mail size={20} />
                                         Enviar por mail
@@ -258,7 +287,7 @@ const AgentPublicPortfolio = () => {
                                             placeholder="Nombre del jugador..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#39FF14]/50 transition-colors"
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:border-[var(--primary)] transition-colors"
                                         />
                                     </div>
 
@@ -271,12 +300,12 @@ const AgentPublicPortfolio = () => {
                                                     key={filter.value}
                                                     onClick={() => setSelectedFilter(filter.value)}
                                                     className={`px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all duration-300 w-full text-left flex justify-between items-center group ${selectedFilter === filter.value
-                                                        ? 'bg-[#39FF14] text-slate-950 shadow-lg'
+                                                        ? 'bg-[var(--primary)] text-slate-950 shadow-lg'
                                                         : 'bg-slate-950 text-slate-400 hover:text-white border border-white/10 hover:border-white/30'
                                                         }`}
                                                 >
                                                     {filter.label}
-                                                    <span className={`w-2 h-2 rounded-full ${selectedFilter === filter.value ? 'bg-slate-950' : 'bg-transparent group-hover:bg-[#39FF14]'}`}></span>
+                                                    <span className={`w-2 h-2 rounded-full ${selectedFilter === filter.value ? 'bg-slate-950' : 'bg-transparent group-hover:bg-[var(--primary)]'}`}></span>
                                                 </button>
                                             ))}
                                         </div>
@@ -288,7 +317,7 @@ const AgentPublicPortfolio = () => {
                                         <select
                                             value={selectedNation}
                                             onChange={(e) => setSelectedNation(e.target.value)}
-                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#39FF14]/50 transition-colors appearance-none cursor-pointer"
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[var(--primary)] transition-colors appearance-none cursor-pointer"
                                         >
                                             <option value="all">Todas</option>
                                             {uniqueNationalities.map(nat => (
@@ -303,7 +332,7 @@ const AgentPublicPortfolio = () => {
                                         <select
                                             value={selectedPassport}
                                             onChange={(e) => setSelectedPassport(e.target.value)}
-                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#39FF14]/50 transition-colors appearance-none cursor-pointer"
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[var(--primary)] transition-colors appearance-none cursor-pointer"
                                         >
                                             <option value="all">Todos</option>
                                             {uniquePassports.map(passport => (
@@ -316,7 +345,7 @@ const AgentPublicPortfolio = () => {
                                     <div className="space-y-4 pt-2 border-t border-white/5">
                                         <div className="flex justify-between items-center text-xs text-slate-400 font-semibold uppercase tracking-wider">
                                             <span>Edad</span>
-                                            <span className="text-[#39FF14]">{ageRange.min} - {ageRange.max} años</span>
+                                            <span className="text-[var(--primary)]">{ageRange.min} - {ageRange.max} años</span>
                                         </div>
                                         <Slider.Root
                                             className="relative flex items-center select-none touch-none w-full h-5"
@@ -328,14 +357,14 @@ const AgentPublicPortfolio = () => {
                                             onValueChange={(value) => setAgeRange({ min: value[0], max: value[1] })}
                                         >
                                             <Slider.Track className="bg-slate-800 relative grow rounded-full h-[3px]">
-                                                <Slider.Range className="absolute bg-[#39FF14] rounded-full h-full" />
+                                                <Slider.Range className="absolute bg-[var(--primary)] rounded-full h-full" />
                                             </Slider.Track>
                                             <Slider.Thumb
-                                                className="block w-4 h-4 bg-slate-950 border-2 border-[#39FF14] shadow-[0_0_10px_rgba(57,255,20,0.3)] rounded-full hover:bg-[#39FF14] focus:outline-none focus:ring-2 focus:ring-[#39FF14]/50 transition-colors cursor-grab active:cursor-grabbing"
+                                                className="block w-4 h-4 bg-slate-950 border-2 border-[var(--primary)] shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)] rounded-full hover:bg-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-colors cursor-grab active:cursor-grabbing"
                                                 aria-label="Edad mínima"
                                             />
                                             <Slider.Thumb
-                                                className="block w-4 h-4 bg-slate-950 border-2 border-[#39FF14] shadow-[0_0_10px_rgba(57,255,20,0.3)] rounded-full hover:bg-[#39FF14] focus:outline-none focus:ring-2 focus:ring-[#39FF14]/50 transition-colors cursor-grab active:cursor-grabbing"
+                                                className="block w-4 h-4 bg-slate-950 border-2 border-[var(--primary)] shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)] rounded-full hover:bg-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition-colors cursor-grab active:cursor-grabbing"
                                                 aria-label="Edad máxima"
                                             />
                                         </Slider.Root>
@@ -350,7 +379,7 @@ const AgentPublicPortfolio = () => {
                                             setSelectedPassport('all');
                                             setAgeRange({ min: 0, max: 100 });
                                         }}
-                                        className="w-full mt-4 py-2 text-center text-slate-400 text-sm hover:text-[#39FF14] transition-colors border border-dashed border-white/10 hover:border-[#39FF14]/30 rounded-lg bg-slate-950/50"
+                                        className="w-full mt-4 py-2 text-center text-slate-400 text-sm hover:text-[var(--primary)] transition-colors border border-dashed border-white/10 hover:border-[var(--primary)] rounded-lg bg-slate-950/50"
                                     >
                                         Limpiar filtros
                                     </button>
@@ -363,7 +392,7 @@ const AgentPublicPortfolio = () => {
                             {/* Results Count & Current Filter Tags (Optional) */}
                             <div className="flex justify-between items-center mb-6 pl-2">
                                 <h2 className="text-xl text-white font-medium">
-                                    Mostrando <span className="text-[#39FF14] font-bold">{filteredPlayers.length}</span> {filteredPlayers.length === 1 ? 'jugador' : 'jugadores'}
+                                    Mostrando <span className="text-[var(--primary)] font-bold">{filteredPlayers.length}</span> {filteredPlayers.length === 1 ? 'jugador' : 'jugadores'}
                                 </h2>
                             </div>
 
@@ -376,7 +405,7 @@ const AgentPublicPortfolio = () => {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.3, delay: index * 0.1 }}
                                             onClick={() => navigate(`/p/${player.id}`)}
-                                            className="group relative bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden hover:border-[#39FF14]/30 hover:shadow-[0_0_20px_rgba(57,255,20,0.1)] transition-all duration-300 cursor-pointer"
+                                            className="group relative bg-slate-900/40 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden hover:border-[var(--primary)] hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.1)] transition-all duration-300 cursor-pointer"
                                         >
                                             {/* Player Image */}
                                             <div className="relative aspect-[4/3] overflow-hidden">
@@ -394,9 +423,8 @@ const AgentPublicPortfolio = () => {
                                                     </span>
                                                 </div>
 
-                                                {/* Player Info Overlay */}
                                                 <div className="absolute bottom-0 left-0 p-4 w-full">
-                                                    <p className="text-[#39FF14] text-xs font-bold tracking-wider uppercase mb-1">
+                                                    <p className="text-[var(--primary)] text-xs font-bold tracking-wider uppercase mb-1">
                                                         {Array.isArray(player.position) ? player.position.join(', ') : player.position}
                                                     </p>
                                                     <h3 className="text-xl font-display font-bold text-white leading-tight">
@@ -436,7 +464,7 @@ const AgentPublicPortfolio = () => {
                                             setSelectedPassport('all');
                                             setAgeRange({ min: 0, max: 100 });
                                         }}
-                                        className="mt-6 px-6 py-2 bg-[#39FF14]/10 text-[#39FF14] text-sm font-bold uppercase rounded-lg hover:bg-[#39FF14]/20 transition-colors"
+                                        className="mt-6 px-6 py-2 bg-[rgba(var(--primary-rgb),0.1)] text-[var(--primary)] text-sm font-bold uppercase rounded-lg hover:bg-[rgba(var(--primary-rgb),0.2)] transition-colors"
                                     >
                                         Limpiar todos los filtros
                                     </button>

@@ -7,6 +7,12 @@ import ShareButtons from '@/components/ShareButtons';
 import MiniPitch from '@/components/soccer/MiniPitch';
 import { API_BASE_URL } from '@/config/api';
 
+// Helper: Convert Hex to RGB {r,g,b}
+const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '57, 255, 20';
+};
+
 const PublicPlayerProfile = () => {
     const { playerId } = useParams();
     const [player, setPlayer] = useState<any>(null);
@@ -35,6 +41,10 @@ const PublicPlayerProfile = () => {
     if (loading) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white">Cargando perfil...</div>;
     if (error) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-red-500">{error}</div>;
     if (!player) return null;
+
+    // --- Branding Logic ---
+    const primaryColor = player.agent?.branding?.primaryColor || '#39FF14';
+    const primaryRgb = hexToRgb(primaryColor);
 
     const calculateAge = (dateString: string) => {
         if (!dateString) return 'N/A';
@@ -72,12 +82,6 @@ const PublicPlayerProfile = () => {
 
     const videoId = getYoutubeId(rawVideoUrl);
 
-    console.log('[PublicProfile] Player:', player.firstName, player.lastName);
-    console.log('[PublicProfile] VideoUrl (Main):', player.videoUrl);
-    console.log('[PublicProfile] VideoList:', player.videoList);
-    console.log('[PublicProfile] Selected URL:', rawVideoUrl);
-    console.log('[PublicProfile] Extracted ID:', videoId);
-
     // Combine main video and gallery videos, ensuring uniqueness
     const mainVideoPoints = player.videoUrl ? [player.videoUrl] : [];
     const galleryPoints = player.videoList?.map((v: any) => v.url) || [];
@@ -96,14 +100,14 @@ const PublicPlayerProfile = () => {
 
     // Helper for grid items
     const InfoItem = ({ label, value }: { label: string, value: string | React.ReactNode }) => (
-        <div className="flex flex-col border-l-2 border-[#39FF14]/30 pl-4 py-1 print:border-l-4 print:border-black">
+        <div className="flex flex-col border-l-2 border-[rgba(var(--primary-rgb),0.3)] pl-4 py-1 print:border-l-4 print:border-black">
             <span className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-1 print:text-gray-600 pointer-events-none">{label}</span>
             <span className="text-white font-display font-bold text-lg md:text-xl leading-none print:text-black">{value}</span>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#39FF14] selection:text-black pb-24 print:pb-0 print:bg-white print:text-black print:min-h-0">
+        <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[var(--primary)] selection:text-black pb-24 print:pb-0 print:bg-white print:text-black print:min-h-0">
             <Helmet>
                 <title>{pageTitle}</title>
                 <meta name="description" content={pageDescription} />
@@ -111,6 +115,14 @@ const PublicPlayerProfile = () => {
                 <meta property="og:description" content={pageDescription} />
                 <meta property="og:image" content={player.avatarUrl || 'https://via.placeholder.com/1200x630'} />
             </Helmet>
+
+            {/* Dynamic Branding Styles */}
+            <style>{`
+                :root {
+                    --primary: ${primaryColor};
+                    --primary-rgb: ${primaryRgb};
+                }
+            `}</style>
 
             {/* Print Styles - One Page Optimization */}
             <style>{`
@@ -133,14 +145,14 @@ const PublicPlayerProfile = () => {
                     )}
                     <div>
                         <h2 className="text-sm font-bold uppercase tracking-widest text-white print:text-black print:text-lg">{player.agent?.agencyName || 'AGENCIA DEPORTIVA'}</h2>
-                        <a href={`mailto:${player.agent?.email}`} className="text-xs text-slate-400 hover:text-[#39FF14] transition-colors flex items-center gap-1 print:text-gray-600">
+                        <a href={`mailto:${player.agent?.email}`} className="text-xs text-slate-400 hover:text-[var(--primary)] transition-colors flex items-center gap-1 print:text-gray-600">
                             <Mail size={12} /> Contactar Representante
                         </a>
                     </div>
                 </div>
                 <div className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-slate-500 print:text-black print:flex">
                     <span>Professional Profile</span>
-                    <span className="text-[#39FF14] print:hidden">•</span>
+                    <span className="text-[var(--primary)] print:hidden">•</span>
                     <span className="print:text-black">2025 Season</span>
                 </div>
             </div>
@@ -167,7 +179,7 @@ const PublicPlayerProfile = () => {
                         className="print:!opacity-100 print:!transform-none"
                     >
                         <div className="flex flex-wrap items-center gap-4 mb-4 print:mb-2">
-                            <span className="px-5 py-2 bg-[#39FF14] text-black text-sm font-bold uppercase tracking-widest rounded-full print:bg-black print:text-white print:px-3 print:py-1 print:text-xs">
+                            <span className="px-5 py-2 bg-[var(--primary)] text-black text-sm font-bold uppercase tracking-widest rounded-full print:bg-black print:text-white print:px-3 print:py-1 print:text-xs">
                                 {Array.isArray(player.position) ? player.position[0] : player.position}
                             </span>
                             <div className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full border border-white/10 text-white font-medium print:text-black print:bg-transparent print:border-0 print:p-0">
@@ -191,7 +203,7 @@ const PublicPlayerProfile = () => {
                 >
                     <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4 print:border-gray-300 print:mb-4 print:pb-2">
                         <h3 className="text-2xl font-display font-bold text-white print:text-black print:text-xl">Ficha Técnica</h3>
-                        <div className="text-[#39FF14] print:hidden"><User /></div>
+                        <div className="text-[var(--primary)] print:hidden"><User /></div>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 print:grid-cols-4 print:gap-4">
@@ -204,7 +216,7 @@ const PublicPlayerProfile = () => {
                             <InfoItem label="Club Actual" value={player.club} />
                         )}
                         {(player.marketValue && player.marketValue !== 'Consultar') && (
-                            <InfoItem label="Valor Mercado" value={<span className="text-[#39FF14] print:text-black">{player.marketValue}</span>} />
+                            <InfoItem label="Valor Mercado" value={<span className="text-[var(--primary)] print:text-black">{player.marketValue}</span>} />
                         )}
                     </div>
 
@@ -256,13 +268,13 @@ const PublicPlayerProfile = () => {
                                     <div>
                                         <h3 className="text-2xl font-display font-bold text-white print:text-black print:text-lg">Trayectoria</h3>
                                     </div>
-                                    <Trophy className="text-[#39FF14] print:hidden" />
+                                    <Trophy className="text-[var(--primary)] print:hidden" />
                                 </div>
 
                                 <div className="space-y-4 print:space-y-2">
                                     {player.careerHistory.slice(0, 5).map((item: any, idx: number) => (
-                                        <div key={idx} className="group flex items-center gap-6 p-4 rounded-xl bg-white/5 border border-transparent hover:border-[#39FF14]/20 print:bg-transparent print:border-0 print:p-0 print:gap-4 print:border-b print:border-gray-100 print:pb-2 last:border-0">
-                                            <div className="w-16 h-16 rounded-full bg-[#39FF14]/10 flex items-center justify-center text-[#39FF14] font-black text-xl border border-[#39FF14]/10 print:text-black print:bg-gray-100 print:w-10 print:h-10 print:text-sm print:border-0">
+                                        <div key={idx} className="group flex items-center gap-6 p-4 rounded-xl bg-white/5 border border-transparent hover:border-[rgba(var(--primary-rgb),0.2)] print:bg-transparent print:border-0 print:p-0 print:gap-4 print:border-b print:border-gray-100 print:pb-2 last:border-0">
+                                            <div className="w-16 h-16 rounded-full bg-[rgba(var(--primary-rgb),0.1)] flex items-center justify-center text-[var(--primary)] font-black text-xl border border-[rgba(var(--primary-rgb),0.1)] print:text-black print:bg-gray-100 print:w-10 print:h-10 print:text-sm print:border-0">
                                                 {item.year}
                                             </div>
                                             <div>
@@ -317,7 +329,7 @@ const PublicPlayerProfile = () => {
                     >
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-2xl font-display font-bold text-white">Video Highlights</h3>
-                            <div className="text-[#39FF14]"><PlayCircle size={24} /></div>
+                            <div className="text-[var(--primary)]"><PlayCircle size={24} /></div>
                         </div>
 
                         <div className={`grid gap-6 ${allVideos.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
@@ -353,7 +365,7 @@ const PublicPlayerProfile = () => {
             {/* Floating Action Bar */}
             <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 no-print">
                 <div className="bg-black/90 backdrop-blur-xl border border-white/10 rounded-full px-6 py-3 flex items-center gap-4 shadow-2xl">
-                    <button onClick={handlePrint} className="flex items-center gap-2 text-white hover:text-[#39FF14] transition-colors font-bold text-sm">
+                    <button onClick={handlePrint} className="flex items-center gap-2 text-white hover:text-[var(--primary)] transition-colors font-bold text-sm">
                         <span className="bg-white/10 p-2 rounded-full"><Calendar size={16} /></span>
                         <span>Descargar PDF</span>
                     </button>

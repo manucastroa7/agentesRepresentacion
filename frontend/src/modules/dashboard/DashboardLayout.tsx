@@ -1,9 +1,14 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import { useAuthStore } from '@/context/authStore';
+import { useAgentTheme } from '@/hooks/useAgentTheme';
 
 const DashboardLayout = () => {
+    const { user } = useAuthStore();
+    useAgentTheme(user?.agent?.branding?.primaryColor);
+
     return (
-        <div className="flex min-h-screen bg-slate-950 text-white selection:bg-[#39FF14] selection:text-slate-950">
+        <div className="flex min-h-screen bg-slate-950 text-white selection:bg-neon-green selection:text-slate-950">
             {/* Background Pattern */}
             <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none"
                 style={{

@@ -22,7 +22,7 @@ type FormValues = {
 // Local upload doesn't need cloud constants
 
 const AgentProfileSettings = () => {
-    const { token, user } = useAuthStore();
+    const { token, user, updateUser } = useAuthStore();
     const { toast } = useToast();
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -43,6 +43,10 @@ const AgentProfileSettings = () => {
             twitter: '',
         },
     });
+
+
+
+
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -174,6 +178,7 @@ const AgentProfileSettings = () => {
                 twitter: updated.socialLinks?.twitter || '',
             });
             if (updated.logo) setLogoPreview(updated.logo);
+            updateUser({ agent: updated });
 
             toast({
                 title: 'Perfil guardado',
@@ -197,7 +202,7 @@ const AgentProfileSettings = () => {
             <div className="flex items-center justify-between gap-4">
                 <div>
                     <p className="text-sm uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
-                        <Shield size={16} className="text-[#39FF14]" />
+                        <Shield size={16} className="text-neon-green" />
                         Perfil de Agencia
                     </p>
                     <h1 className="text-4xl font-display font-bold text-white mt-2">Configuración</h1>
@@ -211,7 +216,7 @@ const AgentProfileSettings = () => {
                 <div className="bg-slate-900/70 border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                            <Lock className="text-[#39FF14]" size={18} />
+                            <Lock className="text-neon-green" size={18} />
                         </div>
                         <div>
                             <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Identidad protegida</p>
@@ -247,8 +252,8 @@ const AgentProfileSettings = () => {
                 {/* Branding */}
                 <div className="bg-slate-900/70 border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-full bg-[#39FF14]/10 border border-[#39FF14]/30 flex items-center justify-center">
-                            <Upload className="text-[#39FF14]" size={18} />
+                        <div className="w-10 h-10 rounded-full bg-neon-green/10 border border-neon-green/30 flex items-center justify-center">
+                            <Upload className="text-neon-green" size={18} />
                         </div>
                         <div>
                             <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Branding</p>
@@ -273,14 +278,14 @@ const AgentProfileSettings = () => {
                             <label className="text-sm text-slate-400 mb-2 block">URL del logo (opcional)</label>
                             <input
                                 {...register('logo')}
-                                className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#39FF14]/60 focus:outline-none"
+                                className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-neon-green/60 focus:outline-none"
                                 placeholder="https://..."
                             />
                             <div className="mt-4 flex flex-wrap gap-3">
                                 <button
                                     type="button"
                                     onClick={() => document.getElementById('logo-upload')?.click()}
-                                    className={`px-4 py-2 rounded-lg border border-[#39FF14]/40 text-[#39FF14] hover:bg-[#39FF14]/10 transition-all text-sm font-semibold ${uploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    className={`px-4 py-2 rounded-lg border border-neon-green/40 text-neon-green hover:bg-neon-green/10 transition-all text-sm font-semibold ${uploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     disabled={uploadingLogo}
                                 >
                                     {uploadingLogo ? 'Subiendo...' : 'Subir'}
@@ -300,11 +305,12 @@ const AgentProfileSettings = () => {
                     </div>
                 </div>
 
+
                 {/* Contact & Bio */}
                 <div className="bg-slate-900/70 border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-                            <Phone className="text-[#39FF14]" size={18} />
+                            <Phone className="text-neon-green" size={18} />
                         </div>
                         <div>
                             <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Contacto</p>
@@ -320,7 +326,7 @@ const AgentProfileSettings = () => {
                                 </div>
                                 <input
                                     {...register('phone')}
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:border-[#39FF14]/60 focus:outline-none"
+                                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:border-neon-green/60 focus:outline-none"
                                     placeholder="+54 9 11 0000 0000"
                                 />
                             </div>
@@ -333,7 +339,7 @@ const AgentProfileSettings = () => {
                                 </div>
                                 <input
                                     {...register('website')}
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:border-[#39FF14]/60 focus:outline-none"
+                                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:border-neon-green/60 focus:outline-none"
                                     placeholder="https://tuagencia.com"
                                 />
                             </div>
@@ -346,7 +352,7 @@ const AgentProfileSettings = () => {
                                 </div>
                                 <input
                                     {...register('location')}
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:border-[#39FF14]/60 focus:outline-none"
+                                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:border-neon-green/60 focus:outline-none"
                                     placeholder="Buenos Aires, Argentina"
                                 />
                             </div>
@@ -357,7 +363,7 @@ const AgentProfileSettings = () => {
                         <textarea
                             {...register('bio')}
                             rows={5}
-                            className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-[#39FF14]/60 focus:outline-none resize-none"
+                            className="w-full bg-slate-950/60 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-neon-green/60 focus:outline-none resize-none"
                             placeholder="Cuéntale al mundo tu propuesta de valor y trayectoria."
                         />
                     </div>
@@ -367,7 +373,7 @@ const AgentProfileSettings = () => {
                 <div className="bg-slate-900/70 border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-                            <LinkIcon className="text-[#39FF14]" size={18} />
+                            <LinkIcon className="text-neon-green" size={18} />
                         </div>
                         <div>
                             <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Redes</p>
@@ -383,7 +389,7 @@ const AgentProfileSettings = () => {
                                 </div>
                                 <input
                                     {...register('instagram')}
-                                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:border-[#39FF14]/60 focus:outline-none"
+                                    className="w-full bg-slate-950/60 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:border-neon-green/60 focus:outline-none"
                                     placeholder="https://instagram.com/tuagencia"
                                 />
                             </div>
@@ -426,8 +432,8 @@ const AgentProfileSettings = () => {
                         {isSubmitting || isSaving ? 'Guardando...' : 'Guardar cambios'}
                     </button>
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 };
 

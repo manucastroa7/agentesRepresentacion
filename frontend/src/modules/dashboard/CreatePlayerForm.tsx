@@ -11,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import InputGroup from './components/InputGroup';
 import { API_BASE_URL } from '@/config/api';
 import defaultAvatar from '@/assets/default_avatar.png';
+import { SPORTS_CONFIG } from '../../config/sports.config';
+import type { SportType } from '../../config/sports.config';
 
 interface FormData {
     firstName: string;
@@ -228,12 +230,11 @@ const CreatePlayerForm = () => {
         name: "videoList"
     });
 
-    const POSITION_CATEGORIES = {
-        'Portero': ['Portero'],
-        'Defensa': ['Lateral derecho', 'Central derecho', 'Central izquierdo', 'Lateral izquierdo'],
-        'Mediocampista': ['Volante por derecha', 'Volante central', 'Volante izquierdo', 'Enganche'],
-        'Delantero': ['Extremo derecho', 'Media Punta', 'Extremo izquierdo', 'Delantero Centro']
-    };
+    const [currentSport, setCurrentSport] = useState<SportType>('football');
+    const sportConfig = SPORTS_CONFIG[currentSport] || SPORTS_CONFIG['football'];
+
+    console.log('Current Sport:', currentSport);
+    console.log('Sport Config:', sportConfig);
 
     const [activeTab, setActiveTab] = useState('personal');
     const [dragActive, setDragActive] = useState(false);
@@ -241,6 +242,32 @@ const CreatePlayerForm = () => {
     const [uploadingImage, setUploadingImage] = useState(false);
     const [uploadingVideo, setUploadingVideo] = useState(false);
     const [videoSource, setVideoSource] = useState<'upload' | 'link'>('upload');
+
+    // New Category State: 'squad' or 'scouting'
+    // Initialize based on loaded data status
+    const [category, setCategory] = useState<'squad' | 'scouting'>('squad');
+
+    // Update category when data loads
+    useEffect(() => {
+        const currentStatus = watch('status');
+        if (['watchlist', 'contacted', 'priority'].includes(currentStatus)) {
+            setCategory('scouting');
+        } else {
+            setCategory('squad');
+        }
+    }, [watch('status')]);
+
+    // Update status when category changes
+    const handleCategoryChange = (newCategory: 'squad' | 'scouting') => {
+        setCategory(newCategory);
+        if (newCategory === 'squad') {
+            setValue('status', 'signed');
+            setValue('availability', 'DISPONIBLE');
+        } else {
+            setValue('status', 'watchlist');
+            setValue('availability', 'DISPONIBLE'); // Default or irrelevant for scouting
+        }
+    };
     // Cloudinary Config
     const CLOUD_NAME = 'drghwlpwe'; // ⚠️ REPLACE WITH YOUR CLOUD NAME
     const UPLOAD_PRESET = 'agentsport_unsigned'; // ⚠️ REPLACE WITH YOUR PRESET
@@ -385,41 +412,83 @@ const CreatePlayerForm = () => {
     return (
         <div className="max-w-5xl mx-auto space-y-6 pb-20">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-4xl font-display font-bold text-white tracking-tight">{id ? 'Editar Jugador' : 'Nuevo Jugador'}</h1>
-                    <p className="text-slate-400 mt-1">{id ? 'Modifica la información del perfil.' : 'Completa la información para crear un nuevo perfil.'}</p>
+            <div className="flex flex-col gap-4">
+                {/* Sport Toggle Experiment */}
+                <div className="flex items-center gap-2 p-2 bg-slate-900/80 rounded-xl border border-white/5 w-fit self-end">
+                    <span className="text-xs text-slate-500 uppercase font-bold px-2">Modo Deporte:</span>
+                    {Object.entries(SPORTS_CONFIG).map(([key, config]) => (
+                        <button
+                            key={key}
+                            onClick={() => {
+                                setCurrentSport(key as SportType);
+                                setValue('position', []); // Reset positions on switch
+                                setValue('tacticalPoints', []);
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${currentSport === key
+                                ? 'bg-white text-slate-950 shadow-md'
+                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
+                        >
+                            {config.label}
+                        </button>
+                    ))}
                 </div>
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-3 bg-slate-900/50 p-2 rounded-xl border border-white/5">
-                        <span className="text-sm font-bold text-slate-300">Visible en Portfolio</span>
-                        <Controller
-                            name="isMarketplaceVisible"
-                            control={control}
-                            render={({ field }) => (
-                                <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    className="data-[state=checked]:bg-[#39FF14]"
-                                />
-                            )}
-                        />
+
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-4xl font-display font-bold text-white tracking-tight">{id ? 'Editar Jugador' : 'Nuevo Jugador'}</h1>
+                        <p className="text-slate-400 mt-1">{id ? 'Modifica la información del perfil.' : 'Completa la información para crear un nuevo perfil.'}</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => navigate('/dashboard/players')}
-                            className="px-6 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-medium"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={handleSubmit(onSubmit)}
-                            disabled={uploadingImage || uploadingVideo}
-                            className={`px-8 py-3 bg-[#39FF14] hover:bg-[#32d912] text-slate-950 rounded-xl font-bold tracking-wide shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:shadow-[0_0_30px_rgba(57,255,20,0.5)] transition-all flex items-center gap-2 ${uploadingImage || uploadingVideo ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            <Save size={20} />
-                            {uploadingImage || uploadingVideo ? 'SUBIENDO...' : 'GUARDAR JUGADOR'}
-                        </button>
+
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-3 bg-slate-900/50 p-2 rounded-xl border border-white/5">
+                            <span className="text-sm font-bold text-slate-300">Visible en Portfolio</span>
+                            <Controller
+                                name="isMarketplaceVisible"
+                                control={control}
+                                render={({ field }) => (
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className="data-[state=checked]:bg-[#39FF14]"
+                                    />
+                                )}
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-3 bg-slate-900/50 p-1 rounded-xl border border-white/5">
+                            <button
+                                type="button"
+                                onClick={() => handleCategoryChange('squad')}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${category === 'squad' ? 'bg-[#39FF14] text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                PLANTEL
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleCategoryChange('scouting')}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${category === 'scouting' ? 'bg-[#39FF14] text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                SCOUTING
+                            </button>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => navigate('/dashboard/players')}
+                                className="px-6 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-medium"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSubmit(onSubmit)}
+                                disabled={uploadingImage || uploadingVideo}
+                                className={`px-8 py-3 bg-[#39FF14] hover:bg-[#32d912] text-slate-950 rounded-xl font-bold tracking-wide shadow-[0_0_20px_rgba(57,255,20,0.3)] hover:shadow-[0_0_30px_rgba(57,255,20,0.5)] transition-all flex items-center gap-2 ${uploadingImage || uploadingVideo ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                <Save size={20} />
+                                {uploadingImage || uploadingVideo ? 'SUBIENDO...' : 'GUARDAR JUGADOR'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -513,7 +582,7 @@ const CreatePlayerForm = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <div className="flex items-center justify-between">
-                                                <label className="text-slate-400 text-sm font-bold uppercase tracking-wider">Club Actual</label>
+                                                <label className="text-slate-400 text-sm font-bold uppercase tracking-wider">{sportConfig.terminology.club} Actual</label>
                                                 <label className="flex items-center gap-2 cursor-pointer">
                                                     <input
                                                         type="checkbox"
@@ -559,7 +628,7 @@ const CreatePlayerForm = () => {
                                             {/* Position Selection */}
                                             <div className="space-y-4">
                                                 <Accordion.Root type="multiple" className="space-y-2">
-                                                    {Object.entries(POSITION_CATEGORIES).map(([category, positions]) => (
+                                                    {Object.entries(sportConfig.positions).map(([category, positions]) => (
                                                         <Accordion.Item key={category} value={category} className="bg-slate-900/30 border border-white/5 rounded-xl overflow-hidden">
                                                             <Accordion.Header>
                                                                 <Accordion.Trigger className="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-slate-300 hover:text-white hover:bg-white/5 transition-colors group data-[state=open]:text-[#39FF14]">
@@ -633,33 +702,30 @@ const CreatePlayerForm = () => {
                                 </div>
 
                                 <div className="space-y-6">
-                                    <InputGroup label="Pie Hábil">
+                                    <InputGroup label={sportConfig.terminology.dominantLimb.label}>
                                         <div className="flex bg-slate-950 p-1 rounded-xl border border-white/10">
-                                            {[
-                                                { label: 'Diestro', value: 'right' },
-                                                { label: 'Zurdo', value: 'left' },
-                                                { label: 'Ambidextro', value: 'both' }
-                                            ].map((foot) => (
+                                            {sportConfig.terminology.dominantLimb.options.map((option) => (
                                                 <label
-                                                    key={foot.value}
+                                                    key={option.value}
                                                     className={`
                                                             flex-1 flex items-center justify-center py-2 rounded-lg cursor-pointer transition-all text-sm font-medium
-                                                            ${watch('foot') === foot.value
+                                                            ${watch('foot') === option.value
                                                             ? 'bg-slate-800 text-white shadow-lg'
                                                             : 'text-slate-500 hover:text-slate-300'}
                                                         `}
                                                 >
                                                     <input
                                                         type="radio"
-                                                        value={foot.value}
+                                                        value={option.value}
                                                         {...register('foot')}
                                                         className="hidden"
                                                     />
-                                                    {foot.label}
+                                                    {option.label}
                                                 </label>
                                             ))}
                                         </div>
                                     </InputGroup>
+
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <InputGroup label="Altura (cm)">
@@ -702,18 +768,34 @@ const CreatePlayerForm = () => {
                                             )}
                                         </div>
 
-                                        <InputGroup label="Estado / Disponibilidad">
-                                            <div className="relative">
-                                                <select
-                                                    {...register('availability')}
-                                                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-[#39FF14] transition-all"
-                                                >
-                                                    <option value="DISPONIBLE">🟢 DISPONIBLE</option>
-                                                    <option value="NO DISPONIBLE">🔴 NO DISPONIBLE</option>
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
-                                            </div>
-                                        </InputGroup>
+                                        {category === 'squad' ? (
+                                            <InputGroup label="Estado / Disponibilidad">
+                                                <div className="relative">
+                                                    <select
+                                                        {...register('availability')}
+                                                        className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-[#39FF14] transition-all"
+                                                    >
+                                                        <option value="DISPONIBLE">🟢 DISPONIBLE</option>
+                                                        <option value="NO DISPONIBLE">🔴 NO DISPONIBLE</option>
+                                                    </select>
+                                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
+                                                </div>
+                                            </InputGroup>
+                                        ) : (
+                                            <InputGroup label="Estado de Scouting">
+                                                <div className="relative">
+                                                    <select
+                                                        {...register('status')}
+                                                        className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-[#39FF14] transition-all"
+                                                    >
+                                                        <option value="watchlist">👁️ Observando</option>
+                                                        <option value="contacted">💬 Contactado</option>
+                                                        <option value="priority">🎯 Objetivo Prioritario</option>
+                                                    </select>
+                                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
+                                                </div>
+                                            </InputGroup>
+                                        )}
                                     </div>
 
                                     {/* Career History Section */}

@@ -11,6 +11,7 @@ interface User {
     agencyName?: string;
     agentSlug?: string;
     avatarUrl?: string;
+    agent?: any;
 }
 
 interface AuthState {

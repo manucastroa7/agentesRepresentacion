@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Radar, Calendar, Globe, Save, Edit, X } from 'lucide-react';
+import { Save, Edit, X, Globe } from 'lucide-react';
 import { useAuthStore } from '@/context/authStore';
 import { useToast } from '@/hooks/use-toast';
 import { API_BASE_URL } from '@/config/api';
 import * as RGL from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { renderWidget, WIDGETS_REGISTRY, type WidgetType } from './components/DashboardWidgets';
+import { renderWidget, type WidgetType } from './components/DashboardWidgets';
 import { Link } from 'react-router-dom';
 
 // @ts-ignore
@@ -59,11 +59,9 @@ const POSITION_GROUPS = [
 const DEFAULT_LAYOUT = [
     { i: 'kpi_squad', x: 0, y: 0, w: 1, h: 4, type: 'KPI_SQUAD' as WidgetType },
     { i: 'kpi_scouting', x: 1, y: 0, w: 1, h: 4, type: 'KPI_SCOUTING' as WidgetType },
-    { i: 'kpi_age', x: 2, y: 0, w: 1, h: 4, type: 'KPI_AGE' as WidgetType },
-    { i: 'kpi_quality', x: 3, y: 0, w: 1, h: 4, type: 'KPI_QUALITY' as WidgetType },
-    { i: 'chart_pos', x: 0, y: 4, w: 2, h: 8, type: 'CHART_POSITIONS' as WidgetType },
-    { i: 'list_alerts', x: 2, y: 4, w: 1, h: 8, type: 'LIST_ALERTS' as WidgetType },
-    { i: 'list_recent', x: 3, y: 4, w: 1, h: 8, type: 'LIST_RECENT' as WidgetType },
+    { i: 'kpi_quality', x: 2, y: 0, w: 2, h: 4, type: 'KPI_QUALITY' as WidgetType },
+    { i: 'chart_pos', x: 0, y: 4, w: 4, h: 8, type: 'CHART_POSITIONS' as WidgetType },
+    { i: 'list_recent', x: 0, y: 12, w: 4, h: 8, type: 'LIST_RECENT' as WidgetType },
 ];
 
 const DashboardHome = () => {
@@ -139,6 +137,29 @@ const DashboardHome = () => {
     }, [token, toast, user?.agentSlug]);
 
 
+    // Helper to parse market value "€ 1.5M" -> 1500000
+    const parseMarketValue = (val?: string) => {
+        if (!val) return 0;
+        try {
+            const clean = val.replace(/[€$£\s]/g, '').toUpperCase();
+            let multiplier = 1;
+            if (clean.includes('M')) multiplier = 1000000;
+            else if (clean.includes('K')) multiplier = 1000;
+
+            const numPart = parseFloat(clean.replace(/[MK]/g, ''));
+            return isNaN(numPart) ? 0 : numPart * multiplier;
+        } catch (e) {
+            return 0;
+        }
+    };
+
+    // Helper to format large numbers
+    const formatValue = (num: number) => {
+        if (num >= 1000000) return `€ ${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `€ ${(num / 1000).toFixed(0)}K`;
+        return `€ ${num}`;
+    };
+
     const {
         signedPlayers,
         scoutingPlayers,
@@ -146,13 +167,16 @@ const DashboardHome = () => {
         dataQuality,
         pieData,
         pendingCompletion,
-        recentSignings,
+        recentSignings
     } = useMemo(() => {
         const signed = players.filter(p => (p.status || '').toLowerCase() === 'signed');
-        const scouting = players.filter(p => {
-            const status = (p.status || '').toLowerCase();
-            return status === 'watchlist' || status === 'priority';
-        });
+
+        // Scouting buckets
+        const watchlist = players.filter(p => (p.status || '').toLowerCase() === 'watchlist');
+        const contacted = players.filter(p => (p.status || '').toLowerCase() === 'contacted');
+        const priority = players.filter(p => (p.status || '').toLowerCase() === 'priority');
+
+        const scouting = [...watchlist, ...contacted, ...priority];
 
         const ageFromBirth = (birth?: string) => {
             if (!birth) return null;
@@ -212,7 +236,7 @@ const DashboardHome = () => {
             dataQuality: dataQualityPct,
             pieData: pie,
             pendingCompletion: pending,
-            recentSignings: recent,
+            recentSignings: recent
         };
     }, [players]);
 
@@ -314,6 +338,7 @@ const DashboardHome = () => {
                             Cancelar
                         </button>
                     )}
+
                     <button
                         onClick={copyAgencyLink}
                         disabled={!agentSlug}
@@ -333,7 +358,9 @@ const DashboardHome = () => {
                     breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                     cols={{ lg: 4, md: 4, sm: 2, xs: 1, xxs: 1 }}
                     rowHeight={30}
+                    // @ts-ignore
                     isDraggable={isEditing}
+                    // @ts-ignore
                     isResizable={isEditing}
                     onLayoutChange={handleLayoutChange}
                     margin={[16, 16]}
